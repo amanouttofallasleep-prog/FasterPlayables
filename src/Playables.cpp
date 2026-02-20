@@ -1,0 +1,1242 @@
+#include "Playables.h"
+#include <iostream>
+#include <algorithm> // Required for std::clamp
+#include <cmath>     // For other math functions like std::sqrt, std::sin
+#include <godot_cpp/core/object.hpp>
+#include <godot_cpp/classes/input_event_mouse_motion.hpp>
+#include <godot_cpp/classes/input_event_key.hpp>
+#include <godot_cpp/classes/camera3d.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
+#include <godot_cpp/classes/engine.hpp>
+
+using namespace godot;
+
+void Playables::_bind_methods()
+{
+	ClassDB::bind_method(D_METHOD("set_MaxWalkSpeed", "speed"), &Playables::SetMaxWalkSpeed);
+	ClassDB::bind_method(D_METHOD("GetMaxWalkSpeed"), &Playables::GetMaxWalkSpeed);
+	ClassDB::bind_method(D_METHOD("SetMaxRunSpeed", "speed"), &Playables::SetMaxRunSpeed);
+	ClassDB::bind_method(D_METHOD("GetMaxRunSpeed"), &Playables::GetMaxRunSpeed);
+
+	ClassDB::bind_method(D_METHOD("GetCamPath"), &Playables::GetCamPath);
+	ClassDB::bind_method(D_METHOD("SetCamPath", "p_path"), &Playables::SetCamPath);
+
+	ClassDB::bind_method(D_METHOD("GetCapPath"), &Playables::GetCapPath);
+	ClassDB::bind_method(D_METHOD("SetCapPath", "p_path"), &Playables::SetCapPath);
+
+	ClassDB::bind_method(D_METHOD("SetInputDirection", "inDirection"), &Playables::SetInputDirection);
+	ClassDB::bind_method(D_METHOD("GetInputDirection"), &Playables::GetInputDirection); 
+
+	ClassDB::bind_method(D_METHOD("Setinput", "new_input"), &Playables::SetInput);
+	ClassDB::bind_method(D_METHOD("Getinput"), &Playables::Getinput);
+
+	ClassDB::bind_method(D_METHOD("SetCam", "new_Cam"), &Playables::SetCam);
+	ClassDB::bind_method(D_METHOD("GetCam"), &Playables::GetCam);
+
+	ClassDB::bind_method(D_METHOD("SetCapBody", "new_Cam"), &Playables::SetCapBody);
+	ClassDB::bind_method(D_METHOD("GetCapBody"), &Playables::GetCapBody);
+
+	ClassDB::bind_method(D_METHOD("SetCapsuleBody", "newCap"), &Playables::SetCapsuleBody);
+	ClassDB::bind_method(D_METHOD("GetCapsuleBody"), &Playables::GetCapsuleBody);
+
+	ClassDB::bind_method(D_METHOD("PhysTick", "delta"), &Playables::PhysTick);
+
+	ClassDB::bind_method(D_METHOD("SetGravity", "newVal"), &Playables::SetGravity);
+	ClassDB::bind_method(D_METHOD("GetGravity"), &Playables::GetGravity);
+
+	ClassDB::bind_method(D_METHOD("SetCoyoteTimeActive", "newVal"), &Playables::SetCoyoteTimeActive);
+	ClassDB::bind_method(D_METHOD("GetCoyoteTimeActive"), &Playables::GetCoyoteTimeActive);
+
+//#####################################################################################################
+
+	ClassDB::bind_method(D_METHOD("SetAcceleration", "newVal"), &Playables::SetAcceleration);
+	ClassDB::bind_method(D_METHOD("GetAcceleration"), &Playables::GetAcceleration);
+
+	ClassDB::bind_method(D_METHOD("SetDeceleration", "newVal"), &Playables::SetDeceleration);
+	ClassDB::bind_method(D_METHOD("GetDeceleration"), &Playables::GetDeceleration);
+
+//#####################################################################################################
+
+	ClassDB::bind_method(D_METHOD("SetCrouchFlag", "newVal"), &Playables::SetCrouchFlag);
+	ClassDB::bind_method(D_METHOD("IsCrouching"), &Playables::IsCrouching);
+
+	ClassDB::bind_method(D_METHOD("SetJumpFlag", "newVal"), &Playables::SetJumpFlag);
+	ClassDB::bind_method(D_METHOD("IsJumping"), &Playables::IsJumping);
+
+	ClassDB::bind_method(D_METHOD("SetSprintFlag", "newVal"), &Playables::SetSprintFlag);
+	ClassDB::bind_method(D_METHOD("IsSprinting"), &Playables::IsSprinting);
+
+	ClassDB::bind_method(D_METHOD("init"), &Playables::init);
+
+	//ClassDB::bind_method(D_METHOD("chargeDash"), &Playables::chargeDash);
+	//ClassDB::bind_method(D_METHOD("chargeJump"), &Playables::chargeJump);
+
+	ClassDB::bind_method(D_METHOD("chargeAction", "IsDash"), &Playables::ChargeAction);
+	ClassDB::bind_method(D_METHOD("GetCharge", "IsDash"), &Playables::GetCharge);
+
+	ClassDB::bind_method(D_METHOD("InputBufferCall"), &Playables::InputBufferCall);
+	ClassDB::bind_method(D_METHOD("CoyoteBufferCall"), &Playables::CoyoteBufferCall);
+	ClassDB::bind_method(D_METHOD("MaxDashTimerCall"), &Playables::MaxDashTimerCall);
+	ClassDB::bind_method(D_METHOD("ActiveShakeTimerCall"), &Playables::ActiveShakeTimerCall);
+
+
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "max_walk_speed"), "SetMaxWalkSpeed", "GetMaxWalkSpeed");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "max_run_speed"), "SetMaxRunSpeed", "GetMaxRunSpeed");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "Gravity"), "SetGravity", "GetGravity");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "InputDirection"), "SetInputDirection", "GetInputDirection");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "Deceleration"), "SetDeceleration", "GetDeceleration");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "Acceleration"), "SetAcceleration", "GetAcceleration");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "CoyoteTimeActive"), "SetCoyoteTimeActive", "GetCoyoteTimeActive");
+
+	//ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "input"), "Setinput", "Getinput");
+	//ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "Cam"), "SetCam", "GetCam");
+
+	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "CamPath"), "SetCamPath", "GetCamPath");
+	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "CapPath"), "SetCapPath", "GetCapPath");
+	//ADD_PROPERTY(PropertyInfo(Variant::, "Cam"), "SetCam", "GetCam");
+
+}
+
+Playables::Playables()
+{
+	MaxWalkSpeed = 6;
+	MaxRunSpeed = 16; 
+	in = Input::get_singleton();
+	//for (int i = 0; i < get_child_count(); i++) //looks for the camera
+	//{
+	//	if (Camera3D* cam = Object::cast_to<Camera3D>(get_child(i)) )
+	//	{
+	//		Cam= cam;
+	//		break; 
+	//	}
+	//}
+}
+
+Playables::~Playables()
+{
+	if(in != nullptr)
+	in->set_mouse_mode(Input::MOUSE_MODE_VISIBLE);
+
+	/*if (noise)
+		memdelete(noise);*/
+	/*if (JumpTimer)memdelete(JumpTimer);
+	if (DashTimer)memdelete(DashTimer);
+	if (InputBuffer)memdelete(InputBuffer);
+	if (CoyoteBuffer)memdelete(CoyoteBuffer);
+	if (MaxDashTimer)memdelete(MaxDashTimer);
+	if (ActiveShakeTimer)memdelete(ActiveShakeTimer);
+	if (noise)memdelete(noise);
+	if (groundCheckRay)memdelete(groundCheckRay);*/
+}
+
+void Playables::_ready() {
+}
+
+void Playables::_process(double delta)
+{
+	if (Engine::get_singleton()->is_editor_hint()) {
+		return;
+	}
+	//PhysTick(delta);  
+}
+
+void Playables::_input(const Ref<InputEvent>& event)
+{
+	if (Engine::get_singleton()->is_editor_hint()) {
+		return;
+	}
+	/*func _input(event) :
+		# Mouse in Camport coordinates.
+		if event is InputEventMouseMotion :
+	lookInput = event.screen_relative
+		Capsule.rotate_y(-lookInput.x / 1000)
+		Cam.rotation.x = (clamp(Cam.rotation.x - lookInput.y / 1000, deg_to_rad(-90), deg_to_rad(90)))*/
+	//https://forum.godotengine.org/t/any-methods-to-identify-the-input-event-is-keyboard-mouse-or-joypad-in-c/47918/5
+	Ref<InputEventMouseMotion> mouse_event = event;
+	if (mouse_event.is_valid()) 
+	{
+		Vector2 lookInput = mouse_event->get_screen_relative();
+		rotate_y(-lookInput.x / 1000);
+		if (Cam != nullptr)
+		{
+			Vector3 current_rotation = Cam->get_rotation();
+			double new_x = std::clamp(
+				current_rotation.x - lookInput.y / 1000,
+				(float)Math::deg_to_rad(-90.0),
+				(float)Math::deg_to_rad(90.0)
+			);
+			Cam->set_rotation(Vector3(new_x, current_rotation.y, current_rotation.z));
+		}
+		//UtilityFunctions::print(lookInput);
+	}
+	Ref<InputEventKey> keyboard_event = event;
+	//if (keyboard_event.is_valid()) 
+	//{
+	//	//Vector2 inputDir = Vector2::ZERO;
+	//	//if (in->is_action_pressed("move_forward")) {
+	//	
+	//}
+}
+
+#pragma region Setters Getters
+
+Vector3 Playables::GetSlideDirection()
+{
+	//FHitResult hit = CurrentFloor.HitResult;
+	//if (hit.bBlockingHit) {
+	//	FVector FloorNormal = hit.Normal;
+	//	/*FVector CrossProduct;
+	//	FVector up = FVector::UpVector;*/
+	//	float DotProduct;
+
+	//	//CrossProduct = FVector::CrossProduct(FloorNormal, up);
+	//	//CrossProduct = FVector::CrossProduct(FloorNormal, CrossProduct);
+	//	DotProduct = 1.0f - FVector::DotProduct(FloorNormal, FVector::UpVector);
+	//	//FString VariableString = FString::Printf(TEXT("Value of Dot: %d"), DotProduct);
+	//	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, VariableString);
+	//	return (/*CrossProduct*/ FVector::VectorPlaneProject(FloorNormal, FVector::UpVector) * (FMath::Clamp(DotProduct, 0.0f, 1.0f)));//should be the direction the slide is going
+	//}
+	//return FVector(0, 0, 0);
+
+	if (is_on_floor())
+	{
+		double DotProduct = 1.0 - (get_floor_normal().dot(UPWARDS));
+		return get_floor_normal().slide(UPWARDS) * std::clamp(DotProduct, 0.0, 1.0);
+	}
+
+	return Vector3();
+}
+
+double Playables::GetSimulationTimeStep(double remainder, int iteration)
+{
+	//	double UCharacterMovementComponent::GetSimulationTimeStep(double RemainingTime, int32 Iterations) const
+	//	{
+	//		static uint32 s_WarningCount = 0;
+	//		if (RemainingTime > MaxSimulationTimeStep)
+	//		{
+	//			if (Iterations < MaxSimulationIterations)
+	//			{
+	//				// Subdivide moves to be no longer than MaxSimulationTimeStep seconds
+	//				RemainingTime = FMath::Min(MaxSimulationTimeStep, RemainingTime * 0.5f);
+	//			}
+	//			else
+	//			{
+	//				// If this is the last iteration, just use all the remaining time. This is usually better than cutting things short, as the simulation won't move far enough otherwise.
+	//				// Print a throttled warning.
+	//#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+	//				if ((s_WarningCount++ < 100) || (GFrameCounter & 15) == 0)
+	//				{
+	//					UE_LOG(LogCharacterMovement, Warning, TEXT("GetSimulationTimeStep() - Max iterations %d hit while remaining time %.6f > MaxSimulationTimeStep (%.3f) for '%s', movement '%s'"), MaxSimulationIterations, RemainingTime, MaxSimulationTimeStep, *GetNameSafe(CharacterOwner), *GetMovementName());
+	//				}
+	//#endif
+	//			}
+	// 	   // no less than MIN_TICK_TIME (to avoid potential divide-by-zero during simulation).
+		//return FMath::Max(MIN_TICK_TIME, RemainingTime);
+	//		}
+	if (remainder > MAXTIMESTEP && iteration < MAXITER)
+		remainder = std::min(MAXTIMESTEP, remainder * 0.5);
+
+	return std::max(MIN_TICK_TIME, remainder);
+}
+
+double Playables::GetDashPower()
+{
+	double HoldTime = 0.1 * (ChargeFlags >> 4);//(CustomMovementFlags >> 4) * 0.1;
+	if (MovementMode != EMovementMode::WallRunning)//(!IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun))
+	{
+		double calcLatDash = (std::clamp(HoldTime, 0.0, 1.5) + 0.4) * Jump_Power * 1.1;//float calcLatDash = (FMath::Clamp(HoldTime, 0.0f, 1.5f) + 0.4f) * Jump_Power * 1.1;
+		double calcFreeDash = Jump_Power * (std::clamp(HoldTime, 0.0, 1.5) + 0.2); //float calcFreeDash = Jump_Power * (FMath::Clamp(HoldTime, 0.0f, 1.5f) + 0.2);
+		double LatDashStrength = (MaxDashStrength > calcLatDash) && MaxDashActive ? MaxDashStrength : (VELMAG() > calcLatDash ? VELMAG() : calcLatDash);
+		double FreeDashStrength = (MaxDashStrength > calcFreeDash) && MaxDashActive ? MaxDashStrength : (VELMAG() > calcFreeDash ? VELMAG() : calcFreeDash);
+		double Value = IsPlayerFreeDashing() ? (FreeDashStrength) : LatDashStrength;
+		//UtilityFunctions::print(calcFreeDash," ", calcLatDash);
+		return /*CanDashFreely && CanDashLaterally ?*/ Value /*: CanDashFreely ? FreeDashStrength : JumpStrength*/;
+	}
+	else
+	{
+		double calcFreeDash = Jump_Power * (std::clamp(HoldTime, 0.0, 1.5) + 0.2);
+		double FreeDashStrength = (MaxDashStrength > calcFreeDash) ?/* Safe_MaxDashTimer > 0*/ MaxDashActive ? MaxDashStrength : VELMAG() : calcFreeDash;
+		return /*CanDashFreely ?*/ FreeDashStrength /*: 0*/;
+	}
+
+	return 0;
+}
+
+bool Playables::IsPlayerFreeDashing()
+{
+	Vector3 forward = -get_global_basis().get_column(2) * -InputDirection.y;
+	//UtilityFunctions::print((RelativeInputDirection.slide(UPWARDS)).dot(forward));
+	return (std::clamp((double)get_floor_normal().dot(getForwardDir()), 0.0, 1.0) > 0.1 || !is_on_floor()) &&		//(FMath::Clamp((CurrentFloor.HitResult.Normal | PlayableOwner->GetControlRotation().Vector()), 0.0f, 1.0f) > 0.1 || !CurrentFloor.bBlockingHit) && //Checks if looking lower than floor or looking around parrallel to floor
+		(InputDirection.is_zero_approx() || ((RelativeInputDirection.slide(UPWARDS)).dot(forward) >= 0.7)); 					//(Acceleration.IsNearlyZero() || (Acceleration.GetSafeNormal() | UpdatedComponent->GetForwardVector()) > 0.7);
+}
+
+Vector3 Playables::getForwardDir() const
+{
+
+	return Cam ? -(Cam->get_global_basis().get_column(2)) : Vector3();
+}
+#pragma endregion
+
+#pragma region Ticks
+void Playables::PhysTick(double delta, int iteration)
+{
+	if (Engine::get_singleton()->is_editor_hint()) {
+		return;
+	}
+
+	UpdateCharacterStateBeforeMovement(delta);
+
+	switch (MovementMode)
+	{
+	case Walking:
+		WalkTick(delta, iteration);
+		break;
+	case Sliding:
+		SlidingTick(delta, iteration);
+		break;
+	case WallRunning:
+		WallRunTick(delta, iteration);
+		break;
+	case Falling:
+		FallingTick(delta, iteration);
+		break;
+	case None:
+		break;
+	default:
+		break;
+	}
+
+	UpdateCharacterStateAfterMovement(delta);
+	//Vector3 vel = VEL(); 
+	//Basis b = get_global_transform().get_basis();
+	//Vector3 forward = -b.get_column(2) * -InputDirection.y;
+	//Vector3 right = b.get_column(0) * InputDirection.x;
+	//Vector3 Direction = (forward + right).normalized(); // Assuming InputDirection is a Vector2 where x is left/right and y is forward/backward
+
+	//if (!InputDirection.is_zero_approx()) 
+	//{
+	//	//tilityFunctions::print("GettingInputs");
+	//	if (!(vel.length() >= MaxRunSpeed))
+	//	{
+	//		vel += Direction * delta * Acceleration;
+	//		vel = vel.normalized() * std::clamp((double)vel.length(), 0.0, MaxRunSpeed);
+	//	}
+	//	else
+	//		vel = vel.normalized() * std::clamp((double)vel.length() - (Deceleration * delta), 0.0, (double)vel.length());
+	//}
+	//else
+	//	vel = vel.normalized() * std::clamp((double)vel.length() - (Deceleration * delta), 0.0, (double)vel.length());
+	//
+	////UtilityFunctions::print(vel);
+	//vel.y = !is_on_floor() ? (VEL().y - (Gravity * delta)) : 0;
+	//set_velocity(vel); 
+	//move_and_slide();
+}
+
+void Playables::WalkTick(double delta, int iteration)
+{
+	float remainingTime = delta;
+
+	while ((remainingTime >= MIN_TICK_TIME) && (iteration < MAXITER))
+	{
+		iteration++;
+		float timeTick = GetSimulationTimeStep(remainingTime, iteration);
+		remainingTime -= timeTick;
+		Vector3 vel = VEL();
+		if (!InputDirection.is_zero_approx() /*&& !(vel.length() >= (isSprinting() || VELMAG() > MaxRunSpeed ? MaxRunSpeed : MaxWalkSpeed))*/)
+		{
+			vel += RelativeInputDirection.normalized() * timeTick * Acceleration;
+			vel = vel.normalized() * std::clamp((double)vel.length(), 0.0, VELMAG() > MaxRunSpeed
+				? VELMAG()
+				: isSprinting() || VELMAG() > MaxWalkSpeed + 0.5
+				? MaxRunSpeed
+				: (isCrouching() ? MaxCrouchSpeed : MaxWalkSpeed));
+
+			//use these for fluid braking and acceleration friction braking 
+			vel = vel - (vel - RelativeInputDirection * vel.length()) * std::min(delta * currFriction, 1.);
+		}
+		else
+		{
+			vel = (vel.normalized() * std::clamp((double)vel.length() - (Deceleration * timeTick), 0.0, (double)vel.length()));
+		}
+		currFriction = std::clamp(currFriction + timeTick * WalkFriction * 2, 0.0, WalkFriction);
+		/*if (vel != vel.slide(get_floor_normal()))
+			UtilityFunctions::print("changed Based On normal");
+		vel = vel.slide(get_floor_normal()).normalized() * vel.length();*/
+
+		set_velocity(vel + DOWNWARDS);
+		move_and_slide();
+
+		if (!is_on_floor())
+		{
+			SetMovementMode(EMovementMode::Falling);
+			StartNewPhysics(remainingTime, iteration);
+			return;
+		}
+	}
+}
+
+void Playables::FallingTick(double delta, int iteration)
+{
+	float remainingTime = delta;
+	while ((remainingTime >= MIN_TICK_TIME) && (iteration < MAXITER))
+	{
+		iteration++;
+		float timeTick = GetSimulationTimeStep(remainingTime, iteration);
+		remainingTime -= timeTick;
+		Vector3 vel = VEL();
+		if (!InputDirection.is_zero_approx() /*&& !(vel.length() >= (isSprinting() || VELMAG() > MaxRunSpeed ? MaxRunSpeed : MaxWalkSpeed))*/)
+		{
+			vel += RelativeInputDirection.normalized() * timeTick * AirControlFactor * (isCrouching() ? MaxCrouchSpeed : MaxWalkSpeed);
+		}
+
+		//fluid braking 
+		vel = vel * (1. - std::min(SlideFriction * delta, 1.)); //Velocity = Velocity * (1.f - FMath::Min(Friction * DeltaTime, 1.f));
+
+		//Basis b = get_global_transform().get_basis();
+		//Vector3 forward = -b.get_column(2) * -InputDirection.y;
+		//Vector3 right = b.get_column(0) * InputDirection.x;
+		//Vector3 Direction = (forward + right).normalized(); // Assuming InputDirection is a Vector2 where x is left/right and y is forward/backward
+		vel.y = (VEL().y - (Gravity * timeTick));
+
+		set_velocity(vel);
+		move_and_slide();
+
+		if (is_on_floor())
+		{
+			screenShake(abs(vel.y) * .1 + LandShakeIntensity, LandShakeTime + abs(vel.y) * 0.001);
+			//UtilityFunctions::print(abs(vel.y) * 0.1);
+			SetMovementMode(EMovementMode::Walking);
+			StartNewPhysics(remainingTime, iteration);
+			return;
+		}
+		//UtilityFunctions::print("falling"); 
+	}
+
+}
+
+void Playables::SlidingTick(double delta, int iteration)
+{
+	float remainingTime = delta;
+	while ((remainingTime >= MIN_TICK_TIME) && (iteration < MAXITER))
+	{
+		iteration++;
+		float timeTick = GetSimulationTimeStep(remainingTime, iteration);
+		remainingTime -= timeTick;
+		Vector3 vel = VEL();
+		vel = vel * (is_on_floor() ? (1.f - std::min(currFriction * timeTick, 1.)) : 1);
+		currFriction = std::clamp(currFriction + timeTick, 0.0, SlideFriction);
+
+		if (is_on_floor() && !PrevFloor)
+		{
+			screenShake(abs(vel.y) * .1 + LandShakeIntensity, LandShakeTime + abs(vel.y) * 0.001);
+			Vector3 floorprojection = get_floor_normal().slide(UPWARDS).slide(get_floor_normal()).normalized() * -(get_velocity().dot(-get_floor_normal()));
+			currFriction = 0;
+			set_velocity(get_velocity() + floorprojection);
+		}
+		//FFindFloorResult buff;
+		//FHitResult rayCheck;
+		//GetWorld()->LineTraceSingleByChannel(rayCheck, UpdatedComponent->GetComponentLocation(), UpdatedComponent->GetComponentLocation() + Velocity * timeTick, ECC_WorldStatic, WallRunParamsQ, WallRunParamsR);
+		//FVector dir = GetSlideDirection();
+		//Velocity += ((Slide_GravityInfluence * FVector::VectorPlaneProject(dir.GetSafeNormal(), CurrentFloor.HitResult.Normal) * timeTick) * dir.Size());
+		////FHitResult Hit; 
+		////because the slide is now looking ahead if there's a wall blocking hit is gonna be true so we gon just not have gravity
+
+		//FindFloor(rayCheck.bBlockingHit ? rayCheck.ImpactPoint : UpdatedComponent->GetComponentLocation() + Velocity * timeTick, buff, true, NULL);
+		//BufferSlideClampTime = abs(buff.HitResult.Normal | FVector::UpVector) > 0.2 ? 0 : 0.3;
+		//if (CanSlideDirection)
+		//	DriftSlide(timeTick);
+
+		//if (buff.FloorDist > 1.0f || abs(buff.HitResult.Normal | FVector::UpVector) <= 0.3f)
+		//	Velocity += (Slide_Gravity * FVector::DownVector * timeTick);
+		//else if (BufferSlideClampTime <= 0)
+		//	SlideAcrossFloor(timeTick, buff);
+
+		////does stuff with audio here inside the while? tf? 
+		////UAkGameplayStatics::SetRTPCValue(SlideRTPC, (abs(buff.HitResult.Normal | FVector::UpVector) <= 0.3f) ? 0.0f : 1.0f, 0, CharacterOwner, "None");
+		////UAkGameplayStatics::SetRTPCValue(SlideRTPC, Acceleration.Size(), 0, CharacterOwner, "None");
+		//FindFloor(UpdatedComponent->GetComponentLocation(), CurrentFloor, true, NULL);
+		vel.y = VEL().y - (!is_on_floor() ? (SlideGravity * timeTick) : 0);
+
+		Vector3 DirectionLerp = RelativeInputDirection.slide(is_on_floor() ? get_floor_normal() : UPWARDS).normalized() * timeTick * directionDrift;		//FVector DirectionLerp = FVector::VectorPlaneProject(Acceleration.GetSafeNormal2D(), CurrentFloor.HitResult.Normal).GetSafeNormal2D() * timetick;
+		//Vector2 horizontal = Vector2(DirectionLerp.x + vel.normalized().x, vel.normalized().z + DirectionLerp.z).normalized();
+		double horizontalSpeed = Vector2(vel.x, vel.z).length();
+		Vector3 normRelInputDir = Vector3(DirectionLerp.x + vel.normalized().x, vel.normalized().y, vel.normalized().z + DirectionLerp.z).normalized() * vel.length();
+		vel = Vector3(normRelInputDir.x, vel.y, normRelInputDir.z); 		//Velocity = (FVector(DirectionLerp.X + Velocity.GetSafeNormal().X, DirectionLerp.Y + Velocity.GetSafeNormal().Y, 0)).GetSafeNormal2D() * Velocity.Size2D() + FVector::UpVector * Velocity.Z;
+
+
+		Vector3 dir = GetSlideDirection();
+		vel += SlideFloorGravityInfluence * dir.normalized().slide(UPWARDS) * timeTick * dir.length();
+
+		//DriftSlide()
+		//FVector bounceDirection = Velocity.MirrorByVector(Hit.Normal);	//Negate the velocity mirrored by the hit normal
+		//Velocity = bounceDirection;
+
+		//float dot = (Hit.Normal | Hit.GetComponent()->GetComponentVelocity().GetSafeNormal());
+		//Velocity += Hit.GetComponent()->GetComponentVelocity().Size() * dot * Hit.Normal;
+
+		//float volume = FMath::Clamp(Velocity.Size() / 1500.0f, 0.2f, 1.0f);
+		//UGameplayStatics::PlaySound2D(this, PlayableOwner->BounceSound, volume, FMath::RandRange(0.8f, 1.5f));
+
+		//setting up the final movement
+		//note: downwards needs to be here reguardless of if there's gravity or not 
+		//that is how move and slide is calculating the snapping assuming that there's going to be a floor collision. 
+		set_velocity(vel + (is_on_floor() ? DOWNWARDS : Vector3(0, 0, 0)));
+		move_and_slide();
+
+		if (is_on_wall() && vel.normalized().dot(get_wall_normal().normalized()) < -0.4)
+		{
+			set_velocity(GetMirroredVector(vel, get_wall_normal()));
+			CanCoyoteTimeJump = true;
+			//UtilityFunctions::print("called"); 
+		}
+
+		PrevFloor = is_on_floor();
+	}
+}
+
+void Playables::WallRunTick(double delta, int iteration)
+{
+	float remainingTime = delta;
+	while ((remainingTime >= MIN_TICK_TIME) && (iteration < MAXITER))
+	{
+		iteration++;
+		float timeTick = GetSimulationTimeStep(remainingTime, iteration);
+		remainingTime -= timeTick;
+		Vector3 vel = VEL();
+
+		LastWallNormal = get_wall_normal();
+		LastYTouchedWall = get_global_position().y;
+
+		if (!InputDirection.is_zero_approx())
+		{
+			Vector3 tempVel = vel + RelativeInputDirection.slide(get_wall_normal()).slide(UPWARDS) * Acceleration * timeTick;
+			if (!(vel.length() > MaxRunSpeed && tempVel.length() > vel.length())) vel = tempVel;
+		}
+		vel = vel.slide(get_wall_normal()) + DOWNWARDS * WallGravity * timeTick;
+		vel = isCrouching() ? vel * (1 - timeTick * 3) : vel;
+		//setting up the final movement
+		set_velocity(vel /*+ (-get_wall_normal().slide(UPWARDS) * (1.0 - get_wall_normal().dot(UPWARDS)))*/);
+		move_and_slide();
+
+		//Checking if should be another state
+		if (!is_on_wall() || is_on_floor())
+		{
+			SetMovementMode(Falling);
+			StartNewPhysics(remainingTime, iteration);
+			return;
+		}
+	}
+}
+#pragma endregion
+
+void Playables::StartNewPhysics(double deltaTime, int Iterations)
+{
+	if (Engine::get_singleton()->is_editor_hint()) {
+		return;
+	}
+	switch (MovementMode)
+	{
+	case Walking:
+		WalkTick(deltaTime, Iterations);
+		break;
+	case Sliding:
+		SlidingTick(deltaTime, Iterations);
+		break;
+	case WallRunning:
+		WallRunTick(deltaTime, Iterations);
+		break;
+	case Falling:
+		FallingTick(deltaTime, Iterations);
+		break;
+	case None:
+		break;
+	default:
+		break;
+	}
+}
+
+void Playables::OnMovementModeChanged(EMovementMode PreviousMovementMode)
+{
+	//UtilityFunctions::print(PreviousMovementMode, "->", MovementMode); 
+	if (CanCoyoteTimeJump && MovementMode == Falling) 
+	{
+		//UtilityFunctions::print("CoyoteTimeStarted");
+		CanCoyoteTimeJump = false; 
+		CoyoteTimeActive = true; 
+		CoyoteBuffer->start(); 
+	}
+	else 
+	{
+		MaxDashActive = true; 
+		MaxDashTimer->start(); 
+		CoyoteTimeActive = false; 
+		CoyoteBuffer->stop(); 
+	}
+
+	if (PreviousMovementMode == Falling && is_on_floor())
+	{
+		Vector3 floorprojection = get_floor_normal().slide(UPWARDS).slide(get_floor_normal()).normalized() * -(get_velocity().dot(-get_floor_normal()));
+		currFriction = 0;
+		set_velocity(get_velocity() + floorprojection);
+	}
+
+	LastWallNormal = is_on_floor() ? Vector3() : LastWallNormal; 
+
+	switch (MovementMode)
+	{
+	case Walking:
+		//UtilityFunctions::print("Walking");
+		break;
+	case Sliding:
+		//UtilityFunctions::print("Sliding");
+		break;
+	case WallRunning:
+		//UtilityFunctions::print("WallRunning");
+		break;
+	case Falling:
+		//UtilityFunctions::print("Falling");
+		break;
+	case None:
+		break;
+	default:
+		break;
+	}
+}
+
+void Playables::OnMovementUpdated(double DeltaSeconds, const Vector3& OldLocation, const Vector3& OldVelocity)
+{
+}
+
+void Playables::UpdateCharacterStateBeforeMovement(double deltaSeconds)
+{
+	MaxDashStrength = VELMAG() > MaxDashStrength ? VELMAG() : MaxDashStrength;
+	CanCoyoteTimeJump = is_on_floor() || MovementMode == WallRunning ? true : CanCoyoteTimeJump;
+	CoyoteSlideRefreshCnt = is_on_floor() ? 0 : CoyoteSlideRefreshCnt;
+	if (CheckToJump()) move_and_slide();
+
+	PrevFloor = is_on_floor();
+	Basis b = get_global_transform().get_basis();
+	PlayerForwardInput = -b.get_column(2) * -InputDirection.y;
+	PlayerRightInput = b.get_column(0) * InputDirection.x;
+	RelativeInputDirection = (PlayerForwardInput + PlayerRightInput).normalized(); // Assuming InputDirection is a Vector2 where x is left/right and y is forward/backward
+	if (MovementMode != EMovementMode::Walking && is_on_floor() && !(isCrouching() && VELMAG() > minSlideVel))
+	{
+		//UtilityFunctions::print("Walking");
+		SetMovementMode(EMovementMode::Walking);
+	}
+
+	if (MovementMode != EMovementMode::WallRunning && (!groundCheckRay->is_colliding() && is_on_wall_only() 
+		&& (LastWallNormal != get_wall_normal() || (LastYTouchedWall - LowerAllowedWall)) > get_global_position().y) && !(isCrouching() && VELMAG() > minSlideVel))
+	{
+		//UtilityFunctions::print("Wallrunning");
+		SetMovementMode(EMovementMode::WallRunning);
+
+	}
+
+	if (MovementMode != Falling && !is_on_floor() && !(isCrouching() && VELMAG() > minSlideVel) && !(!groundCheckRay->is_colliding() && is_on_wall_only()))
+	{
+		//UtilityFunctions::print("Falling");
+		SetMovementMode(EMovementMode::Falling);
+	}
+
+	if (MovementMode != EMovementMode::Sliding && MovementMode != WallRunning && isCrouching() && VELMAG() > minSlideVel)
+	{
+		//UtilityFunctions::print("Sliding");
+		SetMovementMode(EMovementMode::Sliding);
+	}	
+
+	CamUpdate(deltaSeconds); 
+}
+
+void Playables::UpdateCharacterStateAfterMovement(double deltaSeconds)
+{
+	PrevInputFlags = InputFlags; //so we know when players release buttons and what not
+	PrevFloor = is_on_floor(); 
+}
+
+void Playables::ExitWallRun()
+{
+}
+
+void Playables::chargeAction(bool isDash)
+{
+	if (isDash && (ChargeFlags >> 4 != 15)) 	ChargeFlags = (((ChargeFlags >> 4) + 1) << 4) + (ChargeFlags & 15);
+	else if (!isDash && ((ChargeFlags & 15) != 15)) ChargeFlags = ((ChargeFlags & 15) + 1) + (ChargeFlags & 240);
+
+	//UtilityFunctions::print("dashCharge: ", getCharge(true), "jumpCharge: ", getCharge(false));
+}
+
+void Playables::init()
+{
+	if (in == nullptr)
+		in = Input::get_singleton();
+
+	// Use .is_empty() to check if the path was actually set in the Godot Inspector
+
+	if (!CamPath.is_empty()) Cam = get_node<Camera3D>(CamPath);
+	if (!CapPath.is_empty()) 
+	{
+		CapBody = get_node<CollisionShape3D>(CapPath);
+		CollisionShape3D* collision_shape = get_node<CollisionShape3D>(CapPath);
+		if (collision_shape) {
+			CapsuleBody = Object::cast_to<CapsuleShape3D>(collision_shape->get_shape().ptr());
+		}
+	}
+
+	
+	/*if (Cam == nullptr) {
+		UtilityFunctions::printerr("ERROR: Cam is null. Assign CamPath in the Inspector!");
+	}*/
+	JumpTimer = memnew(Timer);
+	DashTimer = memnew(Timer);
+	InputBuffer = memnew(Timer);
+	CoyoteBuffer = memnew(Timer);
+	MaxDashTimer = memnew(Timer);
+	ActiveShakeTimer = memnew(Timer);
+
+	JumpTimer->set_one_shot(false);
+	DashTimer->set_one_shot(false);
+	InputBuffer->set_one_shot(true);
+	CoyoteBuffer->set_one_shot(true);
+	MaxDashTimer->set_one_shot(true);
+	ActiveShakeTimer->set_one_shot(true);
+
+	JumpTimer->set_wait_time(chargeIncrements);
+	DashTimer->set_wait_time(chargeIncrements);
+	InputBuffer->set_wait_time(BufferTime);
+	CoyoteBuffer->set_wait_time(CoyoteTime);
+	MaxDashTimer->set_wait_time(MaxDashTime);
+
+	Callable ChargeCall = Callable(this, "chargeAction");
+
+	DashTimer->connect("timeout", ChargeCall.bind(true));
+	JumpTimer->connect("timeout", ChargeCall.bind(false));
+	InputBuffer->connect("timeout", Callable(this, "InputBufferCall"));
+	CoyoteBuffer->connect("timeout", Callable(this, "CoyoteBufferCall"));
+	MaxDashTimer->connect("timeout", Callable(this, "MaxDashTimerCall"));
+	ActiveShakeTimer->connect("timeout", Callable(this, "ActiveShakeTimerCall"));
+
+	add_child(JumpTimer);
+	add_child(DashTimer);
+	add_child(InputBuffer);
+	add_child(CoyoteBuffer);
+	add_child(MaxDashTimer);
+	add_child(ActiveShakeTimer);
+
+	groundCheckRay = memnew(RayCast3D);  
+	add_child(groundCheckRay); 
+
+	noise = memnew(FastNoiseLite);
+	noise->set_noise_type(FastNoiseLite::TYPE_PERLIN);
+
+	if(groundCheckRay && CapsuleBody)
+	{
+		groundCheckRay->set_target_position(Vector3(0, -CapsuleBody->get_height() / 2, 0)); // 2 units down
+		groundCheckRay->set_enabled(true);
+		groundCheckRay->set_exclude_parent_body(true); // Don't hit self
+	}
+	defaultFOV = Cam->get_fov(); 
+	/*if (raycast->is_colliding()) {
+		Vector3 hit_point = raycast->get_collision_point();
+		Vector3 hit_normal = raycast->get_collision_normal();
+		Object* hit_object = raycast->get_collider();
+
+		UtilityFunctions::print("Raycast hit at: ", hit_point);
+	}*/
+}
+
+void Playables::SetUpJumpTimer(bool isStart)
+{
+	if (isStart)
+		JumpTimer->start();
+	else
+		JumpTimer->stop();
+
+	//UtilityFunctions::print("JumpIn");
+
+}
+
+void Playables::SetUpDashTimer(bool isStart)
+{
+	if (isStart)
+		DashTimer->start();
+	else
+		DashTimer->stop();
+
+	//UtilityFunctions::print("DashIn");
+
+}
+
+void Playables::CamUpdate(double delta)
+{
+
+
+	if(isShaking && Cam && noise)
+	{
+		ShakeTime += delta * ShakeSpeed; 
+
+		/*Cam->set_h_offset(noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity); 
+		Cam->set_v_offset(noise->get_noise_2d(0, ShakeTime) * ShakeIntensity);*/
+		Cam->set_position(Vector3(noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity
+			, noise->get_noise_2d(0, ShakeTime) * ShakeIntensity, 0));
+		//UtilityFunctions::print("h: ", noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity, " v: ", noise->get_noise_2d(0, ShakeTime) * ShakeIntensity); 
+		ShakeIntensity = ShakeIntensity > 0 ? ShakeIntensity - delta * ShakeDecay : 0; 
+	}
+	else if(Cam)
+	{
+		/*Cam->set_h_offset(Math::lerp((double)Cam->get_h_offset(), 0, OffsetLerpBackFactor * delta));
+		Cam->set_v_offset(Math::lerp((double)Cam->get_v_offset(), 0, OffsetLerpBackFactor * delta));*/
+
+		Cam->set_position(Vector3(Math::lerp((double)Cam->get_h_offset(), 0, OffsetLerpBackFactor * delta)
+			, Math::lerp((double)Cam->get_v_offset(), 0, OffsetLerpBackFactor * delta), 0)); 
+	}
+
+
+	if (MovementMode == WallRunning) 
+	{
+		if (LastWallNormal.dot(GetPlayerRight()) > 0.4) RollTarget = -WallTilt * TORAD;
+		else if (LastWallNormal.dot(GetPlayerRight()) < -0.4) RollTarget = WallTilt * TORAD;
+		else RollTarget = 0;
+	}
+	else
+	{
+		if (RelativeInputDirection.dot(GetPlayerRight()) > 0.6) RollTarget = -WalkTilt * TORAD;
+		else if (RelativeInputDirection.dot(GetPlayerRight()) < -0.6) RollTarget = WalkTilt * TORAD;
+		else RollTarget = 0;
+	}
+
+	CurrentRoll = Math::lerp(CurrentRoll, RollTarget, delta * TiltTimeFactor); 
+
+	Vector3 currRot = Cam->get_rotation(); 
+	Cam->set_rotation(Vector3(currRot.x, currRot.y, CurrentRoll));
+
+	Cam->set_fov(Math::lerp(defaultFOV, defaultFOV + maxFOVIncrease, std::clamp(VELMAG()/FOVVelCap, 0.0, 1.0)));
+}
+
+void Playables::UpdateCapsuleSize()
+{
+	if (CapsuleBody) {
+		if(isCrouching())
+		{
+			CapsuleBody->set_height(CrouchHeight);
+			Vector3 pos = CapBody->get_position();
+			pos.y = -CrouchHeight / 2.0f;  // Center the capsule
+			CapBody->set_position(pos);
+		}
+		else 
+		{
+			CapsuleBody->set_height(CrouchHeight);
+			Vector3 pos = CapBody->get_position();
+			pos.y = 0;  // Center the capsule
+			CapBody->set_position(pos);
+		}
+	}
+}
+
+#pragma region Jump/Dash
+bool Playables::CheckToJump()
+{
+	//if (CheckCanClamber()) //ClamberActivation
+	//{
+	//	bool StartedCrouch = isCrouching();//bWantsToCrouch;
+	//	AbleToClamber();
+	//	//@todo Clamber 
+	//	//		yo fuck clambering rn and fuck future self and you past self
+	//	//if (ClamberCheck.bBlockingHit)
+	//	//{
+	//	//	CoyoteTimeActive = false;
+	//	//	Velocity = FVector::ZeroVector;
+	//	//	SetMovementMode(MOVE_Walking);
+	//	//	PastLoc = UpdatedComponent->GetComponentLocation();
+	//	//	bJustTeleported = true;
+	//	//	FHitResult hit;
+
+	//	//	bWantsToCrouch = true;
+	//	//	PlayableOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(CrouchedHalfHeight, true);
+	//	//	PlayableOwner->SetActorLocation(ClamberCheck.Location + FVector::UpVector * (CrouchedHalfHeight + 1));
+	//	//	//DrawDebugSphere(GetWorld(), ClamberCheck.Location + FVector::UpVector * (CrouchedHalfHeight + 1), 10, 3, FColor::Red, true, 1);
+	//	//	//DrawDebugLine(GetWorld(), GetActorLocation(), (ClamberCheck.Location + FVector::UpVector * (CrouchedHalfHeight + 1)), FColor::Cyan, true, 1.0f, 0, 5.0f);
+
+	//	//	OnWantedToJump.Broadcast();
+
+	//	//	if (PlayableOwner)
+	//	//	{
+	//	//		FTimerHandle Timer;
+	//	//		MaxWalkSpeed = 0;
+	//	//		GetWorld()->GetTimerManager().SetTimer(Timer, [this]() {
+	//	//			MaxWalkSpeed = Walk_MaxWalkSpeed;
+	//	//			}, 1 / Clamber_SpeedFactor, false);
+	//	//	}
+	//	//	CustomMovementFlags &= 240;
+	//	//	BufferingJump = false;
+	//	//	BufferingDash = false;
+	//	//	CoyoteTimeActive = false;
+	//	//	GetWorld()->GetTimerManager().ClearTimer(Safe_CoyoteTime);
+	//	//	GetWorld()->GetTimerManager().ClearTimer(Safe_DashInputBuffer);
+	//	//	GetWorld()->GetTimerManager().ClearTimer(Safe_JumpInputBuffer);
+
+
+	//	//	FTimerHandle Timer;
+	//	//	GetWorld()->GetTimerManager().SetTimer(Timer, [this]() {
+	//	//		CrouchIn(false);
+	//	//		}, 0.01, false);
+
+	//	//	return false;
+	//	//}
+	//}
+
+	if (CheckCanJump())//Jump Inputed
+	{
+		//ServerTransparency(1, (!Safe_bWantsToJump && Safe_bPrevWantsToJump) ? 1.0 : 0.0); 
+		if (is_on_floor() || CoyoteTimeActive || MovementMode == EMovementMode::WallRunning)//(CurrentFloor.bBlockingHit || CoyoteTimeActive || IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun))
+		{
+
+			Vector3 JumpNorm; //FVector
+			if (MovementMode != EMovementMode::WallRunning)//(!IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun)) //normal jump from the floor
+			{
+				JumpNorm = is_on_floor() ? get_floor_normal() : UPWARDS; //CurrentFloor.bBlockingHit ? CurrentFloor.HitResult.Normal : FVector::UpVector;
+				OnGroundJump();
+			}
+			else //(IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun)) //jump from the wall no dash
+			{
+				//@todo
+				JumpNorm = get_wall_normal();//wallhit.Normal;
+				OnWallJump();
+			}
+
+			OnJumpDone(JumpNorm * VELMAG());
+
+			return true;
+		}
+
+		if (!isJumping() && wasJumping())
+		{
+			OnJumpFailed();
+			return false;
+		}
+
+	}
+
+	if (CheckCanDash())//Dash Inputted
+	{
+		if (is_on_floor() || CoyoteTimeActive || MovementMode == EMovementMode::WallRunning)//(CurrentFloor.bBlockingHit || CoyoteTimeActive || IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun))
+		{
+			float BufferedDashValue = VELMAG(); //Velocity.Size()
+
+			if (MovementMode != EMovementMode::WallRunning)//(!IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun)) //dash on floor or during coyote time
+			{
+				OnGroundDash();
+			}
+			else //dash on wall
+			{
+				OnWallDash();
+			}
+
+			//IS THIS IDIOT CODE TF?
+			//WHAT IS THE POINT OF THIS?????
+				//if (MovementMode == EMovementMode::Sliding)//(IsCustomMovementMode(CMOVE_Slide))
+				//{
+				//	//BufferSlideClampTime = 0.3;
+				//}
+				//else
+				//{
+				//	if (MovementMode == EMovementMode::WallRunning)//(IsCustomMovementMode(CMOVE_WallRun) /*&& !HasCustomGravity()*/)
+				//		ExitWallRun();
+				//	SetMovementMode(EMovementMode::MOVE_Falling);
+				//}
+			OnDashDone(BufferedDashValue);
+
+			return true;
+		}
+
+		if (!isSprinting() && wasSprinting())
+		{
+			OnDashFailed();
+			return false;
+		}
+
+		/*
+			Checks if the player is looking up enough to freedash
+			Checks is the player is not pressing wasd or w
+
+			if the following was true do a free dash (dash in the direction you're looking)
+				Gets the control rotation and multiply it by a factor set that as velocity
+			if the following was false do a lateral dash (dash fast on the ground in a movement direction)
+				Project the acceleration to the plane of the ground and apply the force in the direction of the acceleration
+		*/
+	}
+	return false;
+}
+
+void Playables::OnGroundDash()
+{
+	double power = GetDashPower();
+	Vector3 Vel = VEL();
+	Vel = IsPlayerFreeDashing()						//checks if pressing w or nothing
+		? getForwardDir() * power					//All true? then just dash where u looking
+		: power * (!InputDirection.is_zero_approx() //: ((FVector::VectorPlaneProject(
+			? RelativeInputDirection.slide(get_floor_normal()) : (-get_global_basis().get_column(2)).slide(get_floor_normal()));
+	//UtilityFunctions::print(IsPlayerFreeDashing() ? 0 : !InputDirection.is_zero_approx() ? 1 : 2);
+	//UtilityFunctions::print(power);
+
+	set_velocity(Vel);
+}
+
+void Playables::OnWallDash()
+{
+	//float HoldTime = (CustomMovementFlags >> 4) * 0.1;
+	//float calcFreeDash = Jump_Power * (FMath::Clamp(HoldTime, 0, 1.5) + 0.2);
+	//float FreeDashStrength = (MaxDashStrength > calcFreeDash) ?/* Safe_MaxDashTimer > 0*/ MaxDashActive ? MaxDashStrength : Velocity.Size() : calcFreeDash;
+	//Velocity = (PlayableOwner->GetControlRotation().Vector() * FreeDashStrength);
+	//float calcFreeDash = Jump_Power * (FMath::Clamp(HoldTime, 0, 1.5) + 0.2);
+	float power = GetDashPower();
+	Vector3 Vel = getForwardDir() * power;
+
+	set_velocity(Vel);
+	SetMovementMode(Falling);
+
+	//UtilityFunctions::print(Vel.length());
+}
+
+void Playables::OnGroundJump()
+{
+	double HoldTime = getCharge(false) * 0.1; //(CustomMovementFlags & 15) * 0.1;
+	Vector3 Vel = VEL();
+	Vel.y = !is_on_floor() ? std::clamp((double)Vel.y, 0.0, VELMAG()) : std::clamp((double)Vel.slide(get_floor_normal()).y, 0.0, VELMAG());//Velocity.Z = !CurrentFloor.bBlockingHit ? FMath::Clamp(Velocity.Z, 0.0f, Velocity.Size()) : FMath::Clamp(FVector::VectorPlaneProject(Velocity, CurrentFloor.HitResult.Normal).Z, 0.0f, Velocity.Size());
+	Vel += is_on_floor() ? get_floor_normal() * std::clamp((std::clamp(HoldTime, 0.0, 1.5) + 0.4) * Jump_Power, (double)JumpClamps.x, (double)JumpClamps.y)//Velocity += CurrentFloor.bBlockingHit ? CurrentFloor.HitResult.Normal * FMath::Clamp((FMath::Clamp(HoldTime, 0.0f, 1.5f) + .4f) * Jump_Power, Jump_Clamps.X, Jump_Clamps.Y)
+		: std::clamp((std::clamp(HoldTime, 0.0, 1.5) + 0.4) * Jump_Power, (double)JumpClamps.x, (double)JumpClamps.y) * UPWARDS + DOWNWARDS * Jump_Power * 0.25 * CoyoteSlideRefreshCnt;//: FMath::Clamp((FMath::Clamp(HoldTime, 0.0f, 1.5f) + .4f) * Jump_Power, Jump_Clamps.X, Jump_Clamps.Y) * FVector::UpVector + FVector::DownVector * Jump_Power * 0.25f * CoyoteSlideRefreshCnt;
+
+	if (!is_on_floor()) CoyoteSlideRefreshCnt++;
+
+	set_velocity(Vel); //kill me 
+}
+
+void Playables::OnWallJump()
+{
+	double HoldTime = getCharge(false) * 0.1;//(CustomMovementFlags & 15) * 0.1;
+	Vector3 Vel = VEL();
+
+	Vel.y = Vel.y < 0 ? 0 : Vel.y; //Velocity.Z = Velocity.Z < 0 ? 0 : Velocity.Z;
+	Vel += (get_wall_normal().slide(UPWARDS) * Jump_Power * (std::clamp(HoldTime, 0.0, 1.5) + .2)
+		+ (UPWARDS * (std::clamp(HoldTime, 0.0, 0.75) * 1) * Jump_Power));
+	//Velocity += (wallhit.Normal.GetSafeNormal2D() * WallRun_AttractionForce * (FMath::Clamp(HoldTime, 0.0f, 1.5f) + 1))
+			//+ (FVector::UpVector * (FMath::Clamp(HoldTime, 0.0f, 0.75f) * 2) * Jump_Power);
+	set_velocity(Vel); //kill me 
+	SetMovementMode(Falling);
+}
+
+void Playables::OnJumpDone(Vector3 JumpPower)
+{
+	if (MovementMode == EMovementMode::WallRunning || !(MovementMode == EMovementMode::WallRunning))
+		//((IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun) && CanWallJump) || (!IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun) && CanJump))
+	{
+		SetMovementMode(EMovementMode::Falling);
+		//@todo volume
+			/*float volume = FMath::Clamp((JumpPower.Z - Velocity.Size2D()) / 1500.0f, 0.2f, 0.8f);
+			UGameplayStatics::PlaySound2D(this, PlayableOwner->JumpEndSound, volume, FMath::Clamp((0.4f / volume), 0.0f, 1.2f));
+			PlayableOwner->OnJumpIsDone(volume);*/
+
+
+			//@todo CoyoteTime @todo Buffer
+			//Note: fuck I hate this
+				/*BufferingJump = false;
+				CoyoteTimeActive = false;
+				GetWorld()->GetTimerManager().ClearTimer(Safe_CoyoteTime);
+
+				GetWorld()->GetTimerManager().ClearTimer(Safe_JumpInputBuffer);*/
+		screenShake(VELMAG() * getCharge(false) * .005 + ChargeActionShakeIntensity, ChargeActionShakeTime + VELMAG() * getCharge(false) * .0005);
+		MaxDashStrength = VELMAG();
+		ChargeFlags &= 240;
+		CoyoteTimeActive = false;
+		BufferingJump = false;
+		CanCoyoteTimeJump = false;
+	}
+}
+
+void Playables::OnJumpFailed()
+{
+	//UtilityFunctions::print("jumpfailed");
+	//@todo Buffer
+	BufferingDash = false;
+	BufferingJump = true;
+	InputBuffer->start();
+
+	//GetWorld()->GetTimerManager().SetTimer(Safe_JumpInputBuffer, [this]() {BufferingJump = false; }, BufferTime, false);
+}
+
+void Playables::OnDashDone(float DashPower)
+{
+	//@todo wtf
+		////just checks if you actually dashed or could have dashed, stupid workaround I know
+		//if (MovementMode == EMovementMode::WallRunning || 
+		//	!(MovementMode == EMovementMode::WallRunning)
+		//	&& IsPlayerFreeDashing())
+		//	/*((IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun) && CanWallDash) ||
+		//	(!IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun)
+		//		&& ((IsPlayerFreeDashing() && CanDashFreely) || CanDashLaterally)))*/
+		//{
+		//	MaxDashStrength = VELMAG(); //Velocity.Size()
+		//	//@todo Volume
+		//		//float volume = FMath::Clamp((Velocity.Size() - DashPower) / 1500.0f, 0.2f, 0.8f);
+		//		//UGameplayStatics::PlaySound2D(this, PlayableOwner->DashEndSound, volume, FMath::Clamp((0.4f / volume), 0.0f, 1.2f));
+		//		//PlayableOwner->OnDashIsDone(volume);
+		//	
+		//	//@todo Buffer
+		//		/*BufferingDash = false;
+		//		CoyoteTimeActive = false;
+		//		GetWorld()->GetTimerManager().ClearTimer(Safe_CoyoteTime);
+		//		GetWorld()->GetTimerManager().ClearTimer(Safe_DashInputBuffer);*/
+
+		//	ChargeFlags &= 15;
+		//	UtilityFunctions::print("called"); 
+		//}
+	screenShake(VELMAG() * getCharge(true) * .005 + ChargeActionShakeIntensity, ChargeActionShakeTime + VELMAG() * getCharge(true) * .0005);
+	MaxDashStrength = VELMAG();
+	CanCoyoteTimeJump = false;
+	CoyoteTimeActive = false;
+	ChargeFlags &= 15;
+	BufferingDash = false;
+}
+
+void Playables::OnDashFailed()
+{
+	//UtilityFunctions::print("dashfailed"); 
+	//@todo Buffer
+	BufferingJump = false;
+	BufferingDash = true;
+	InputBuffer->start();
+	//GetWorld()->GetTimerManager().SetTimer(Safe_JumpInputBuffer, [this]() {BufferingDash = false; }, BufferTime, false);
+}
+#pragma endregion
+
+void Playables::AbleToClamber()
+{
+	//@todo Clamber 
+	//Note: yeah fuck you dealing with this later
+		//	float capsuleHH = (PlayableOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+		//	FVector currLocation = UpdatedComponent->GetComponentLocation() + capsuleHH * FVector::DownVector + FVector::UpVector * MaxStepHeight;
+		//	FVector clamberHeight = currLocation + FVector::UpVector * Clamber_MaxHeight;
+		//	FVector currForward = UpdatedComponent->GetForwardVector() * Clamber_Distance;
+		//	FVector currRight = UpdatedComponent->GetRightVector();
+		//
+		//	TArray<AActor*> IgnoredActors;
+		//	IgnoredActors.Add(PlayableOwner);
+		//	bool canClamber;
+		//	//deprecated code reuse as is no changes needed
+		//	//Looking for better solutions
+		//
+		//
+		//	//Will Look in front of the player if there is a thing there
+		//	canClamber = (GetWorld()->LineTraceSingleByChannel(ClamberCheck, clamberHeight + currForward, currLocation + currForward, ECC_WorldStatic, WallRunParamsQ, WallRunParamsR));
+		//	//DrawDebugLine(GetWorld(), clamberHeight + currForward, currLocation + currForward, FColor::Cyan, true, 100.0f, 0, 5.0f);
+		//
+		//
+		//	if (!canClamber || (ClamberCheck.Normal | FVector::UpVector) < 0.8)
+		//	{
+		//		ClamberCheck.bBlockingHit = false;
+		//		return;
+		//	}
+		//
+		//	float rememberHeight = ClamberCheck.Location.Z;
+		//	FVector rememberNormal = ClamberCheck.Normal;
+		//
+		//	//PlayableCapsuleCanStand(ClamberCheck); 
+		//#pragma region Capsule Trace
+		//	FVector StartLocation = ClamberCheck.Location; // Starting point of the trace
+		//	FVector EndLocation = StartLocation + (capsuleHH + 1) * FVector::UpVector;   // End point of the trace (direction you want to trace)
+		//	float CapsuleRadius = PlayableOwner->GetCapsuleComponent()->GetScaledCapsuleRadius();                // Radius of the capsule
+		//	float CapsuleHalfHeight = capsuleHH;
+		//	//DrawDebugSphere(GetWorld(), ClamberRunResult.Location, 10, 3, FColor::Red, true, 1);
+		//	FHitResult HitResult;
+		//	FHitResult NonInitialHit;
+		//
+		//	// Perform the capsule trace
+		//	bool SpaceOnTop =
+		//		!UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(),
+		//			EndLocation,
+		//			EndLocation,
+		//			CapsuleRadius, CapsuleHalfHeight, UEngineTypes::ConvertToTraceType(ECC_Visibility), true, IgnoredActors, EDrawDebugTrace::None, HitResult, true)
+		//		|| HitResult.PenetrationDepth <= 5
+		//		|| (!UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(),
+		//			(EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))),
+		//			(EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))),
+		//			CapsuleRadius, CapsuleHalfHeight, UEngineTypes::ConvertToTraceType(ECC_Visibility), true, IgnoredActors, EDrawDebugTrace::None, NonInitialHit, true)
+		//			&& (GetWorld()->LineTraceSingleByChannel(NonInitialHit,
+		//				(EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))),
+		//				(EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))) + FVector::DownVector * (CapsuleHalfHeight + Clamber_MaxHeight / 5),
+		//				ECC_WorldStatic, WallRunParamsQ, WallRunParamsR)
+		//				&& !((NonInitialHit.Normal | FVector::UpVector) < 0.8)));
+		//
+		//	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Value: %i"), SpaceOnTop));
+		//
+		//	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Dist to impact: %f"), (HitResult.Location - HitResult.ImpactPoint).Size()));
+		//	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Pen: %f"), HitResult.PenetrationDepth));
+		//
+		//	/*DrawDebugLine(GetWorld(), (EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))),
+		//		(EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))) + FVector::DownVector * (CapsuleHalfHeight + Clamber_MaxHeight / 5), FColor::Cyan, false, .0f, 0, 1.0f);*/
+		//
+		//
+		//		//Checks if crouching makes it able to go
+		//	if (!SpaceOnTop && !bWantsToCrouch)
+		//	{
+		//		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Enter Crouch check Pass"));
+		//
+		//		bool SpaceOnTopCrouched = !UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(),
+		//			ClamberCheck.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)) + FVector(0, 0, 1),
+		//			ClamberCheck.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)),
+		//			CapsuleRadius, CrouchedHalfHeight, UEngineTypes::ConvertToTraceType(ECC_Visibility), true, IgnoredActors, EDrawDebugTrace::None, HitResult, true)
+		//			|| HitResult.PenetrationDepth <= 5
+		//			|| (!UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(),
+		//				(ClamberCheck.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)) + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 1))) + FVector(0, 0, 1),
+		//				(ClamberCheck.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)) + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 1))),
+		//				CapsuleRadius, CrouchedHalfHeight, UEngineTypes::ConvertToTraceType(ECC_Visibility), true, IgnoredActors, EDrawDebugTrace::None, NonInitialHit, true)
+		//				&& (GetWorld()->LineTraceSingleByChannel(NonInitialHit,
+		//					(ClamberCheck.Location + FVector::UpVector * CrouchedHalfHeight + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 1))) + FVector(0, 0, 1),
+		//					(ClamberCheck.Location + FVector::UpVector * CrouchedHalfHeight + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 1))) + FVector::DownVector * (CrouchedHalfHeight + Clamber_MaxHeight / 5),
+		//					ECC_WorldStatic, WallRunParamsQ, WallRunParamsR)
+		//					&& !((NonInitialHit.Normal | FVector::UpVector) < 0.8)));
+		//		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Value: %i"), SpaceOnTop));
+		//
+		//		//DrawDebugLine(GetWorld(),ClamberRunResult.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)),(ClamberRunResult.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)) + ( HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 1))),FColor::Cyan, false, 1.0f, 0, 1.0f);
+		//
+		//		if (SpaceOnTopCrouched)
+		//		{
+		//			SpaceOnTop = true;
+		//			bWantsToCrouch = true;
+		//		}
+		//		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Value: %i"), SpaceOnTopCrouched));
+		//
+		//	}
+		//#pragma endregion
+		//
+		//	if (!SpaceOnTop || !canClamber)
+		//	{
+		//		ClamberCheck.bBlockingHit = false;
+		//		return;
+		//	}
+		//	canClamber = (GetWorld()->LineTraceSingleByChannel(ClamberCheck, currLocation, ClamberCheck.Location + FVector::DownVector, ECC_WorldStatic, WallRunParamsQ, WallRunParamsR));
+		//	//DrawDebugLine(GetWorld(), currLocation, ClamberCheck.Location + FVector::DownVector, FColor::Cyan, true, 100.0f, 0, 5.0f);
+		//
+		//	//Makes sure the hit of the capsule traces actually is reasonable if it hasn't returned already
+		//	//we return false if 
+		//	//we can't clamber | the normal of the floor isn't facing upwards
+		//	if (!canClamber || (HitResult.Normal | FVector::UpVector) > 0.8)
+		//	{
+		//		ClamberCheck.bBlockingHit = false;
+		//		return;
+		//	}
+		//
+		//	ClamberCheck.Location = FVector(ClamberCheck.Location.X, ClamberCheck.Location.Y, rememberHeight) - ClamberCheck.Normal * 10;
+		//	//DrawDebugLine(GetWorld(), currLocation, FVector(currLocation.X, currLocation.Y, rememberHeight + capsuleHH), FColor::Cyan, true, 1.0f, 0, 5.0f);
+		//	//DrawDebugLine(GetWorld(), FVector(currLocation.X, currLocation.Y, rememberHeight + capsuleHH), ClamberRunResult.Location + rememberNormal * 10, FColor::Cyan, true, 1.0f, 0, 5.0f);
+		//
+		//	//Commence final check so that the player isn't just underneath the platform and theres like a small gap to get in
+		//	if (GetWorld()->LineTraceSingleByChannel(HitResult, currLocation, FVector(currLocation.X, currLocation.Y, rememberHeight + capsuleHH), ECC_WorldStatic, WallRunParamsQ, WallRunParamsR)
+		//		|| GetWorld()->LineTraceSingleByChannel(HitResult, FVector(currLocation.X, currLocation.Y, rememberHeight + capsuleHH), ClamberCheck.Location + rememberNormal * 10, ECC_WorldStatic, WallRunParamsQ, WallRunParamsR))
+		//	{
+		//		ClamberCheck.bBlockingHit = false;
+		//		return;
+		//	}
+		//	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Cases Pass"));
+}
