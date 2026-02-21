@@ -27,7 +27,7 @@ void uninitialize_fasterplayables_module(ModuleInitializationLevel p_level) {
 }
 
 extern "C" {
-    GDExtensionBool GDE_EXPORT fasterplayables_library_init(
+    GDExtensionBool GDE_EXPORT fasterplayables_init(
         GDExtensionInterfaceGetProcAddress p_get_proc_address,
         GDExtensionClassLibraryPtr p_library,
         GDExtensionInitialization* r_initialization

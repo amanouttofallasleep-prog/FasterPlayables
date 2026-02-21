@@ -9,6 +9,13 @@
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/classes/engine.hpp>
 
+// macros.h
+// m_variant_type: e.g., Variant::FLOAT, Variant::INT, Variant::VECTOR3
+#define BIND_PROP(m_class, m_variant_type, m_name) \
+    ClassDB::bind_method(D_METHOD("get_", #m_name), &m_class::get_##m_name); \
+    ClassDB::bind_method(D_METHOD("set_" #m_name, "p_value"), &m_class::set_##m_name); \
+    ClassDB::add_property(#m_class, PropertyInfo(m_variant_type, #m_name), "set_" #m_name, "get_" #m_name);
+
 using namespace godot;
 
 void Playables::_bind_methods()
@@ -675,6 +682,7 @@ void Playables::StartNewPhysics(double deltaTime, int Iterations)
 	if (Engine::get_singleton()->is_editor_hint()) {
 		return;
 	}
+
 	switch (MovementMode)
 	{
 	case Walking:
