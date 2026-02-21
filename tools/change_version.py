@@ -18,7 +18,7 @@ def clean_build_files() -> None:
         SystemExit: If the scons -c command fails.
     """
     try:
-        subprocess.run(["scons", "-c"], check=True, cwd=PARENT_DIR)
+        subprocess.run(["python", "-m", "SCons", "-c"], check=True, cwd=PARENT_DIR)
         print("\n")
         print("Old build files cleaned successfully.")
     except subprocess.CalledProcessError:

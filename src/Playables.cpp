@@ -13,7 +13,7 @@ using namespace godot;
 
 void Playables::_bind_methods()
 {
-	ClassDB::bind_method(D_METHOD("set_MaxWalkSpeed", "speed"), &Playables::SetMaxWalkSpeed);
+	ClassDB::bind_method(D_METHOD("SetMaxWalkSpeed", "speed"), &Playables::SetMaxWalkSpeed);
 	ClassDB::bind_method(D_METHOD("GetMaxWalkSpeed"), &Playables::GetMaxWalkSpeed);
 	ClassDB::bind_method(D_METHOD("SetMaxRunSpeed", "speed"), &Playables::SetMaxRunSpeed);
 	ClassDB::bind_method(D_METHOD("GetMaxRunSpeed"), &Playables::GetMaxRunSpeed);
@@ -44,8 +44,8 @@ void Playables::_bind_methods()
 	ClassDB::bind_method(D_METHOD("SetGravity", "newVal"), &Playables::SetGravity);
 	ClassDB::bind_method(D_METHOD("GetGravity"), &Playables::GetGravity);
 
-	ClassDB::bind_method(D_METHOD("SetCoyoteTimeActive", "newVal"), &Playables::SetCoyoteTimeActive);
-	ClassDB::bind_method(D_METHOD("GetCoyoteTimeActive"), &Playables::GetCoyoteTimeActive);
+	//ClassDB::bind_method(D_METHOD("SetCoyoteTimeActive", "newVal"), &Playables::SetCoyoteTimeActive);
+	//ClassDB::bind_method(D_METHOD("GetCoyoteTimeActive"), &Playables::GetCoyoteTimeActive);
 
 //#####################################################################################################
 
@@ -68,6 +68,93 @@ void Playables::_bind_methods()
 
 	ClassDB::bind_method(D_METHOD("init"), &Playables::init);
 
+
+
+	ClassDB::bind_method(D_METHOD("SetCrouchHeight", "newVal"), &Playables::SetCrouchHeight);
+	ClassDB::bind_method(D_METHOD("GetCrouchHeight"), &Playables::GetCrouchHeight);
+
+	ClassDB::bind_method(D_METHOD("SetSlideGravity", "newVal"), &Playables::SetSlideGravity);
+	ClassDB::bind_method(D_METHOD("GetSlideGravity"), &Playables::GetSlideGravity);
+
+	ClassDB::bind_method(D_METHOD("SetWallGravity", "newVal"), &Playables::SetWallGravity);
+	ClassDB::bind_method(D_METHOD("GetWallGravity"), &Playables::GetWallGravity);
+
+	ClassDB::bind_method(D_METHOD("SetSlideFloorGravityInfluence", "newVal"), &Playables::SetSlideFloorGravityInfluence);
+	ClassDB::bind_method(D_METHOD("GetSlideFloorGravityInfluence"), &Playables::GetSlideFloorGravityInfluence);
+
+	ClassDB::bind_method(D_METHOD("SetSlideFriction", "newVal"), &Playables::SetSlideFriction);
+	ClassDB::bind_method(D_METHOD("GetSlideFriction"), &Playables::GetSlideFriction);
+
+	ClassDB::bind_method(D_METHOD("SetWalkFriction", "newVal"), &Playables::SetWalkFriction);
+	ClassDB::bind_method(D_METHOD("GetWalkFriction"), &Playables::GetWalkFriction);
+
+	ClassDB::bind_method(D_METHOD("SetDirectionDrift", "newVal"), &Playables::SetDirectionDrift);
+	ClassDB::bind_method(D_METHOD("GetDirectionDrift"), &Playables::GetDirectionDrift);
+
+	ClassDB::bind_method(D_METHOD("SetMinSlideVel", "newVal"), &Playables::SetMinSlideVel);
+	ClassDB::bind_method(D_METHOD("GetMinSlideVel"), &Playables::GetMinSlideVel);
+
+	ClassDB::bind_method(D_METHOD("SetJumpPower", "newVal"), &Playables::SetJumpPower);
+	ClassDB::bind_method(D_METHOD("GetJumpPower"), &Playables::GetJumpPower);
+
+	ClassDB::bind_method(D_METHOD("SetJumpClamps", "newVal"), &Playables::SetJumpClamps);
+	ClassDB::bind_method(D_METHOD("GetJumpClamps"), &Playables::GetJumpClamps);
+
+	ClassDB::bind_method(D_METHOD("SetAirControlFactor", "newVal"), &Playables::SetAirControlFactor);
+	ClassDB::bind_method(D_METHOD("GetAirControlFactor"), &Playables::GetAirControlFactor);
+
+	ClassDB::bind_method(D_METHOD("SetMaxDashTime", "newVal"), &Playables::SetMaxDashTime);
+	ClassDB::bind_method(D_METHOD("GetMaxDashTime"), &Playables::GetMaxDashTime);
+
+	ClassDB::bind_method(D_METHOD("SetLowerAllowedWallrintFlag", "newVal"), &Playables::SetLowerAllowedWall);
+	ClassDB::bind_method(D_METHOD("GetLowerAllowedWall"), &Playables::GetLowerAllowedWall);
+
+	ClassDB::bind_method(D_METHOD("SetLandShakeTime", "newVal"), &Playables::SetLandShakeTime);
+	ClassDB::bind_method(D_METHOD("GetLandShakeTime"), &Playables::GetLandShakeTime);
+
+	ClassDB::bind_method(D_METHOD("SetLandShakeIntensity", "newVal"), &Playables::SetLandShakeIntensity);
+	ClassDB::bind_method(D_METHOD("GetLandShakeIntensity"), &Playables::GetLandShakeIntensity);
+
+	ClassDB::bind_method(D_METHOD("SetChargeActionShakeTime", "newVal"), &Playables::SetChargeActionShakeTime);
+	ClassDB::bind_method(D_METHOD("GetChargeActionShakeTime"), &Playables::GetChargeActionShakeTime);
+
+	ClassDB::bind_method(D_METHOD("SetChargeActionShakeIntensity", "newVal"), &Playables::SetChargeActionShakeIntensity);
+	ClassDB::bind_method(D_METHOD("GetChargeActionShakeIntensity"), &Playables::GetChargeActionShakeIntensity);
+
+	ClassDB::bind_method(D_METHOD("SetShakeSpeed", "newVal"), &Playables::SetShakeSpeed);
+	ClassDB::bind_method(D_METHOD("GetShakeSpeed"), &Playables::GetShakeSpeed);
+
+	ClassDB::bind_method(D_METHOD("SetShakeDecay", "newVal"), &Playables::SetShakeDecay);
+	ClassDB::bind_method(D_METHOD("GetShakeDecay"), &Playables::GetShakeDecay);
+
+	ClassDB::bind_method(D_METHOD("SetFOVVelCap", "newVal"), &Playables::SetFOVVelCap);
+	ClassDB::bind_method(D_METHOD("GetFOVVelCap"), &Playables::GetFOVVelCap);
+
+	ClassDB::bind_method(D_METHOD("SetWallTilt", "newVal"), &Playables::SetWallTilt);
+	ClassDB::bind_method(D_METHOD("GetWallTilt"), &Playables::GetWallTilt);
+
+	ClassDB::bind_method(D_METHOD("SetWalkTilt", "newVal"), &Playables::SetWalkTilt);
+	ClassDB::bind_method(D_METHOD("GetWalkTilt"), &Playables::GetWalkTilt);
+
+	ClassDB::bind_method(D_METHOD("SetCoyoteTime", "newVal"), &Playables::SetCoyoteTime);
+	ClassDB::bind_method(D_METHOD("GetCoyoteTime"), &Playables::GetCoyoteTime);
+
+	ClassDB::bind_method(D_METHOD("SetChargeIncrements", "newVal"), &Playables::SetChargeIncrements);
+	ClassDB::bind_method(D_METHOD("GetChargeIncrements"), &Playables::GetChargeIncrements);
+
+	ClassDB::bind_method(D_METHOD("SetTiltTimeFactor", "newVal"), &Playables::SetTiltTimeFactor);
+	ClassDB::bind_method(D_METHOD("GetTiltTimeFactor"), &Playables::GetTiltTimeFactor);
+
+	ClassDB::bind_method(D_METHOD("SetBobbingFactor", "newVal"), &Playables::SetBobbingFactor);
+	ClassDB::bind_method(D_METHOD("GetBobbingFactor"), &Playables::GetBobbingFactor);
+
+	ClassDB::bind_method(D_METHOD("SetMaxFOVIncrease", "newVal"), &Playables::SetMaxFOVIncrease);
+	ClassDB::bind_method(D_METHOD("GetMaxFOVIncrease"), &Playables::GetMaxFOVIncrease);
+
+	ClassDB::bind_method(D_METHOD("SetBufferTime", "newVal"), &Playables::SetBufferTime);
+	ClassDB::bind_method(D_METHOD("GetBufferTime"), &Playables::GetBufferTime);
+
+
 	//ClassDB::bind_method(D_METHOD("chargeDash"), &Playables::chargeDash);
 	//ClassDB::bind_method(D_METHOD("chargeJump"), &Playables::chargeJump);
 
@@ -80,13 +167,66 @@ void Playables::_bind_methods()
 	ClassDB::bind_method(D_METHOD("ActiveShakeTimerCall"), &Playables::ActiveShakeTimerCall);
 
 
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "max_walk_speed"), "SetMaxWalkSpeed", "GetMaxWalkSpeed");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "max_run_speed"), "SetMaxRunSpeed", "GetMaxRunSpeed");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "Gravity"), "SetGravity", "GetGravity");
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "InputDirection"), "SetInputDirection", "GetInputDirection");
+	ADD_GROUP("MovementConstants", "movement_");
+
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "Deceleration"), "SetDeceleration", "GetDeceleration");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "Acceleration"), "SetAcceleration", "GetAcceleration");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "CoyoteTimeActive"), "SetCoyoteTimeActive", "GetCoyoteTimeActive");
+
+
+	ADD_SUBGROUP("Walk", "walk_");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "MaxWalkSpeed"), "SetMaxWalkSpeed", "GetMaxWalkSpeed");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "MaxRunSpeed"), "SetMaxRunSpeed", "GetMaxRunSpeed");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "CrouchHeight"), "SetCrouchHeight", "GetCrouchHeight");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "WalkFriction"), "SetWalkFriction", "GetWalkFriction");
+	ADD_SUBGROUP("JumpDash", "jumpdash_");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "JumpClamps"), "SetJumpClamps", "GetJumpClamps");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "JumpPower"), "SetJumpPower", "GetJumpPower");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "MaxDashTime"), "SetMaxDashTime", "GetMaxDashTime");
+
+
+	ADD_SUBGROUP("Slide", "slide_");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "SlideGravity"), "SetSlideGravity", "GetSlideGravity");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "SlideFloorGravityInfluence"), "SetSlideFloorGravityInfluence", "	GetSlideFloorGravityInfluence");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "SlideFriction"), "SetSlideFriction", "GetSlideFriction");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "DirectionDrift"), "SetDirectionDrift", "GetDirectionDrift");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "minSlideVel"), "SetMinSlideVel", "GetMinSlideVel");
+
+	ADD_SUBGROUP("WallRun", "wallrun_");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "WallGravity"), "SetWallGravity", "GetWallGravity");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "LowerAllowedWall"), "SetLowerAllowedWall", "GetLowerAllowedWall");
+
+	ADD_SUBGROUP("Falling", "falling_");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "Gravity"), "SetGravity", "GetGravity");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "AirControlFactor"), "SetAirControlFactor", "GetAirControlFactor");
+
+	ADD_GROUP("UserSettings", "user_");
+	ADD_SUBGROUP("Grace", "grace_");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "BufferTime"), "SetBufferTime", "GetBufferTime");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "CoyoteTime"), "SetCoyoteTime", "GetCoyoteTime");
+
+	ADD_SUBGROUP("Camera", "camera_");
+
+
+
+ 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "LandShakeIntensity"), "SetLandShakeIntensity", "GetLandShakeIntensity");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "ChargeActionShakeIntensity"), "SetChargeActionShakeIntensity", "GetChargeActionShakeIntensity");
+ 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "ShakeSpeed"), "SetShakeSpeed", "GetShakeSpeed");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "ShakeDecay"), "SetShakeDecay", "GetShakeDecay");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "FOVVelCap"), "SetFOVVelCap", "GetFOVVelCap");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "WallTilt"), "SetWallTilt", "GetWallTilt");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "WalkTilt"), "SetWalkTilt", "GetWalkTilt");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "ChargeIncrements"), "SetChargeIncrements", "GetChargeIncrements");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "TiltTimeFactor"), "SetTiltTimeFactor", "GetTiltTimeFactor");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "BobbingFactor"), "SetBobbingFactor", "GetBobbingFactor");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "maxFOVIncrease"), "SetMaxFOVIncrease", "GetMaxFOVIncrease");
+
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "InputDirection"), "SetInputDirection", "GetInputDirection");
+	//ADD_PROPERTY(PropertyInfo(Variant::BOOL, "CoyoteTimeActive"), "SetCoyoteTimeActive", "GetCoyoteTimeActive");
+
+
+ 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "LandShakeTime"), "SetLandShakeTime", "GetLandShakeTime");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "ChargeActionShakeTime"), "SetChargeActionShakeTime", "GetChargeActionShakeTime");
+ 
 
 	//ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "input"), "Setinput", "Getinput");
 	//ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "Cam"), "SetCam", "GetCam");
@@ -244,8 +384,8 @@ double Playables::GetDashPower()
 	double HoldTime = 0.1 * (ChargeFlags >> 4);//(CustomMovementFlags >> 4) * 0.1;
 	if (MovementMode != EMovementMode::WallRunning)//(!IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun))
 	{
-		double calcLatDash = (std::clamp(HoldTime, 0.0, 1.5) + 0.4) * Jump_Power * 1.1;//float calcLatDash = (FMath::Clamp(HoldTime, 0.0f, 1.5f) + 0.4f) * Jump_Power * 1.1;
-		double calcFreeDash = Jump_Power * (std::clamp(HoldTime, 0.0, 1.5) + 0.2); //float calcFreeDash = Jump_Power * (FMath::Clamp(HoldTime, 0.0f, 1.5f) + 0.2);
+		double calcLatDash = (std::clamp(HoldTime, 0.0, 1.5) + 0.4) * JumpPower * 1.1;//float calcLatDash = (FMath::Clamp(HoldTime, 0.0f, 1.5f) + 0.4f) * JumpPower * 1.1;
+		double calcFreeDash = JumpPower * (std::clamp(HoldTime, 0.0, 1.5) + 0.2); //float calcFreeDash = JumpPower * (FMath::Clamp(HoldTime, 0.0f, 1.5f) + 0.2);
 		double LatDashStrength = (MaxDashStrength > calcLatDash) && MaxDashActive ? MaxDashStrength : (VELMAG() > calcLatDash ? VELMAG() : calcLatDash);
 		double FreeDashStrength = (MaxDashStrength > calcFreeDash) && MaxDashActive ? MaxDashStrength : (VELMAG() > calcFreeDash ? VELMAG() : calcFreeDash);
 		double Value = IsPlayerFreeDashing() ? (FreeDashStrength) : LatDashStrength;
@@ -254,7 +394,7 @@ double Playables::GetDashPower()
 	}
 	else
 	{
-		double calcFreeDash = Jump_Power * (std::clamp(HoldTime, 0.0, 1.5) + 0.2);
+		double calcFreeDash = JumpPower * (std::clamp(HoldTime, 0.0, 1.5) + 0.2);
 		double FreeDashStrength = (MaxDashStrength > calcFreeDash) ?/* Safe_MaxDashTimer > 0*/ MaxDashActive ? MaxDashStrength : VELMAG() : calcFreeDash;
 		return /*CanDashFreely ?*/ FreeDashStrength /*: 0*/;
 	}
@@ -343,14 +483,14 @@ void Playables::WalkTick(double delta, int iteration)
 		float timeTick = GetSimulationTimeStep(remainingTime, iteration);
 		remainingTime -= timeTick;
 		Vector3 vel = VEL();
-		if (!InputDirection.is_zero_approx() /*&& !(vel.length() >= (isSprinting() || VELMAG() > MaxRunSpeed ? MaxRunSpeed : MaxWalkSpeed))*/)
+		if (!InputDirection.is_zero_approx() /*&& !(vel.length() >= (IsSprinting() || VELMAG() > MaxRunSpeed ? MaxRunSpeed : MaxWalkSpeed))*/)
 		{
 			vel += RelativeInputDirection.normalized() * timeTick * Acceleration;
 			vel = vel.normalized() * std::clamp((double)vel.length(), 0.0, VELMAG() > MaxRunSpeed
 				? VELMAG()
-				: isSprinting() || VELMAG() > MaxWalkSpeed + 0.5
+				: IsSprinting() || VELMAG() > MaxWalkSpeed + 0.5
 				? MaxRunSpeed
-				: (isCrouching() ? MaxCrouchSpeed : MaxWalkSpeed));
+				: (IsCrouching() ? MaxCrouchSpeed : MaxWalkSpeed));
 
 			//use these for fluid braking and acceleration friction braking 
 			vel = vel - (vel - RelativeInputDirection * vel.length()) * std::min(delta * currFriction, 1.);
@@ -385,9 +525,9 @@ void Playables::FallingTick(double delta, int iteration)
 		float timeTick = GetSimulationTimeStep(remainingTime, iteration);
 		remainingTime -= timeTick;
 		Vector3 vel = VEL();
-		if (!InputDirection.is_zero_approx() /*&& !(vel.length() >= (isSprinting() || VELMAG() > MaxRunSpeed ? MaxRunSpeed : MaxWalkSpeed))*/)
+		if (!InputDirection.is_zero_approx() /*&& !(vel.length() >= (IsSprinting() || VELMAG() > MaxRunSpeed ? MaxRunSpeed : MaxWalkSpeed))*/)
 		{
-			vel += RelativeInputDirection.normalized() * timeTick * AirControlFactor * (isCrouching() ? MaxCrouchSpeed : MaxWalkSpeed);
+			vel += RelativeInputDirection.normalized() * timeTick * AirControlFactor * (IsCrouching() ? MaxCrouchSpeed : MaxWalkSpeed);
 		}
 
 		//fluid braking 
@@ -404,7 +544,7 @@ void Playables::FallingTick(double delta, int iteration)
 
 		if (is_on_floor())
 		{
-			screenShake(abs(vel.y) * .1 + LandShakeIntensity, LandShakeTime + abs(vel.y) * 0.001);
+			ScreenShake(abs(vel.y) * .1 + LandShakeIntensity, LandShakeTime + abs(vel.y) * 0.001);
 			//UtilityFunctions::print(abs(vel.y) * 0.1);
 			SetMovementMode(EMovementMode::Walking);
 			StartNewPhysics(remainingTime, iteration);
@@ -429,7 +569,7 @@ void Playables::SlidingTick(double delta, int iteration)
 
 		if (is_on_floor() && !PrevFloor)
 		{
-			screenShake(abs(vel.y) * .1 + LandShakeIntensity, LandShakeTime + abs(vel.y) * 0.001);
+			ScreenShake(abs(vel.y) * .1 + LandShakeIntensity, LandShakeTime + abs(vel.y) * 0.001);
 			Vector3 floorprojection = get_floor_normal().slide(UPWARDS).slide(get_floor_normal()).normalized() * -(get_velocity().dot(-get_floor_normal()));
 			currFriction = 0;
 			set_velocity(get_velocity() + floorprojection);
@@ -458,7 +598,7 @@ void Playables::SlidingTick(double delta, int iteration)
 		//FindFloor(UpdatedComponent->GetComponentLocation(), CurrentFloor, true, NULL);
 		vel.y = VEL().y - (!is_on_floor() ? (SlideGravity * timeTick) : 0);
 
-		Vector3 DirectionLerp = RelativeInputDirection.slide(is_on_floor() ? get_floor_normal() : UPWARDS).normalized() * timeTick * directionDrift;		//FVector DirectionLerp = FVector::VectorPlaneProject(Acceleration.GetSafeNormal2D(), CurrentFloor.HitResult.Normal).GetSafeNormal2D() * timetick;
+		Vector3 DirectionLerp = RelativeInputDirection.slide(is_on_floor() ? get_floor_normal() : UPWARDS).normalized() * timeTick * DirectionDrift;		//FVector DirectionLerp = FVector::VectorPlaneProject(Acceleration.GetSafeNormal2D(), CurrentFloor.HitResult.Normal).GetSafeNormal2D() * timetick;
 		//Vector2 horizontal = Vector2(DirectionLerp.x + vel.normalized().x, vel.normalized().z + DirectionLerp.z).normalized();
 		double horizontalSpeed = Vector2(vel.x, vel.z).length();
 		Vector3 normRelInputDir = Vector3(DirectionLerp.x + vel.normalized().x, vel.normalized().y, vel.normalized().z + DirectionLerp.z).normalized() * vel.length();
@@ -514,7 +654,7 @@ void Playables::WallRunTick(double delta, int iteration)
 			if (!(vel.length() > MaxRunSpeed && tempVel.length() > vel.length())) vel = tempVel;
 		}
 		vel = vel.slide(get_wall_normal()) + DOWNWARDS * WallGravity * timeTick;
-		vel = isCrouching() ? vel * (1 - timeTick * 3) : vel;
+		vel = IsCrouching() ? vel * (1 - timeTick * 3) : vel;
 		//setting up the final movement
 		set_velocity(vel /*+ (-get_wall_normal().slide(UPWARDS) * (1.0 - get_wall_normal().dot(UPWARDS)))*/);
 		move_and_slide();
@@ -620,27 +760,27 @@ void Playables::UpdateCharacterStateBeforeMovement(double deltaSeconds)
 	PlayerForwardInput = -b.get_column(2) * -InputDirection.y;
 	PlayerRightInput = b.get_column(0) * InputDirection.x;
 	RelativeInputDirection = (PlayerForwardInput + PlayerRightInput).normalized(); // Assuming InputDirection is a Vector2 where x is left/right and y is forward/backward
-	if (MovementMode != EMovementMode::Walking && is_on_floor() && !(isCrouching() && VELMAG() > minSlideVel))
+	if (MovementMode != EMovementMode::Walking && is_on_floor() && !(IsCrouching() && VELMAG() > minSlideVel))
 	{
 		//UtilityFunctions::print("Walking");
 		SetMovementMode(EMovementMode::Walking);
 	}
 
 	if (MovementMode != EMovementMode::WallRunning && (!groundCheckRay->is_colliding() && is_on_wall_only() 
-		&& (LastWallNormal != get_wall_normal() || (LastYTouchedWall - LowerAllowedWall)) > get_global_position().y) && !(isCrouching() && VELMAG() > minSlideVel))
+		&& (LastWallNormal != get_wall_normal() || (LastYTouchedWall - LowerAllowedWall)) > get_global_position().y) && !(IsCrouching() && VELMAG() > minSlideVel))
 	{
 		//UtilityFunctions::print("Wallrunning");
 		SetMovementMode(EMovementMode::WallRunning);
 
 	}
 
-	if (MovementMode != Falling && !is_on_floor() && !(isCrouching() && VELMAG() > minSlideVel) && !(!groundCheckRay->is_colliding() && is_on_wall_only()))
+	if (MovementMode != Falling && !is_on_floor() && !(IsCrouching() && VELMAG() > minSlideVel) && !(!groundCheckRay->is_colliding() && is_on_wall_only()))
 	{
 		//UtilityFunctions::print("Falling");
 		SetMovementMode(EMovementMode::Falling);
 	}
 
-	if (MovementMode != EMovementMode::Sliding && MovementMode != WallRunning && isCrouching() && VELMAG() > minSlideVel)
+	if (MovementMode != EMovementMode::Sliding && MovementMode != WallRunning && IsCrouching() && VELMAG() > minSlideVel)
 	{
 		//UtilityFunctions::print("Sliding");
 		SetMovementMode(EMovementMode::Sliding);
@@ -659,7 +799,7 @@ void Playables::ExitWallRun()
 {
 }
 
-void Playables::chargeAction(bool isDash)
+void Playables::ChargeAction(bool isDash)
 {
 	if (isDash && (ChargeFlags >> 4 != 15)) 	ChargeFlags = (((ChargeFlags >> 4) + 1) << 4) + (ChargeFlags & 15);
 	else if (!isDash && ((ChargeFlags & 15) != 15)) ChargeFlags = ((ChargeFlags & 15) + 1) + (ChargeFlags & 240);
@@ -702,8 +842,8 @@ void Playables::init()
 	MaxDashTimer->set_one_shot(true);
 	ActiveShakeTimer->set_one_shot(true);
 
-	JumpTimer->set_wait_time(chargeIncrements);
-	DashTimer->set_wait_time(chargeIncrements);
+	JumpTimer->set_wait_time(ChargeIncrements);
+	DashTimer->set_wait_time(ChargeIncrements);
 	InputBuffer->set_wait_time(BufferTime);
 	CoyoteBuffer->set_wait_time(CoyoteTime);
 	MaxDashTimer->set_wait_time(MaxDashTime);
@@ -817,7 +957,7 @@ void Playables::CamUpdate(double delta)
 void Playables::UpdateCapsuleSize()
 {
 	if (CapsuleBody) {
-		if(isCrouching())
+		if(IsCrouching())
 		{
 			CapsuleBody->set_height(CrouchHeight);
 			Vector3 pos = CapBody->get_position();
@@ -910,7 +1050,7 @@ bool Playables::CheckToJump()
 			return true;
 		}
 
-		if (!isJumping() && wasJumping())
+		if (!IsJumping() && WasJumping())
 		{
 			OnJumpFailed();
 			return false;
@@ -950,7 +1090,7 @@ bool Playables::CheckToJump()
 			return true;
 		}
 
-		if (!isSprinting() && wasSprinting())
+		if (!IsSprinting() && WasSprinting())
 		{
 			OnDashFailed();
 			return false;
@@ -986,10 +1126,10 @@ void Playables::OnGroundDash()
 void Playables::OnWallDash()
 {
 	//float HoldTime = (CustomMovementFlags >> 4) * 0.1;
-	//float calcFreeDash = Jump_Power * (FMath::Clamp(HoldTime, 0, 1.5) + 0.2);
+	//float calcFreeDash = JumpPower * (FMath::Clamp(HoldTime, 0, 1.5) + 0.2);
 	//float FreeDashStrength = (MaxDashStrength > calcFreeDash) ?/* Safe_MaxDashTimer > 0*/ MaxDashActive ? MaxDashStrength : Velocity.Size() : calcFreeDash;
 	//Velocity = (PlayableOwner->GetControlRotation().Vector() * FreeDashStrength);
-	//float calcFreeDash = Jump_Power * (FMath::Clamp(HoldTime, 0, 1.5) + 0.2);
+	//float calcFreeDash = JumpPower * (FMath::Clamp(HoldTime, 0, 1.5) + 0.2);
 	float power = GetDashPower();
 	Vector3 Vel = getForwardDir() * power;
 
@@ -1001,11 +1141,11 @@ void Playables::OnWallDash()
 
 void Playables::OnGroundJump()
 {
-	double HoldTime = getCharge(false) * 0.1; //(CustomMovementFlags & 15) * 0.1;
+	double HoldTime = GetCharge(false) * 0.1; //(CustomMovementFlags & 15) * 0.1;
 	Vector3 Vel = VEL();
 	Vel.y = !is_on_floor() ? std::clamp((double)Vel.y, 0.0, VELMAG()) : std::clamp((double)Vel.slide(get_floor_normal()).y, 0.0, VELMAG());//Velocity.Z = !CurrentFloor.bBlockingHit ? FMath::Clamp(Velocity.Z, 0.0f, Velocity.Size()) : FMath::Clamp(FVector::VectorPlaneProject(Velocity, CurrentFloor.HitResult.Normal).Z, 0.0f, Velocity.Size());
-	Vel += is_on_floor() ? get_floor_normal() * std::clamp((std::clamp(HoldTime, 0.0, 1.5) + 0.4) * Jump_Power, (double)JumpClamps.x, (double)JumpClamps.y)//Velocity += CurrentFloor.bBlockingHit ? CurrentFloor.HitResult.Normal * FMath::Clamp((FMath::Clamp(HoldTime, 0.0f, 1.5f) + .4f) * Jump_Power, Jump_Clamps.X, Jump_Clamps.Y)
-		: std::clamp((std::clamp(HoldTime, 0.0, 1.5) + 0.4) * Jump_Power, (double)JumpClamps.x, (double)JumpClamps.y) * UPWARDS + DOWNWARDS * Jump_Power * 0.25 * CoyoteSlideRefreshCnt;//: FMath::Clamp((FMath::Clamp(HoldTime, 0.0f, 1.5f) + .4f) * Jump_Power, Jump_Clamps.X, Jump_Clamps.Y) * FVector::UpVector + FVector::DownVector * Jump_Power * 0.25f * CoyoteSlideRefreshCnt;
+	Vel += is_on_floor() ? get_floor_normal() * std::clamp((std::clamp(HoldTime, 0.0, 1.5) + 0.4) * JumpPower, (double)JumpClamps.x, (double)JumpClamps.y)//Velocity += CurrentFloor.bBlockingHit ? CurrentFloor.HitResult.Normal * FMath::Clamp((FMath::Clamp(HoldTime, 0.0f, 1.5f) + .4f) * JumpPower, Jump_Clamps.X, Jump_Clamps.Y)
+		: std::clamp((std::clamp(HoldTime, 0.0, 1.5) + 0.4) * JumpPower, (double)JumpClamps.x, (double)JumpClamps.y) * UPWARDS + DOWNWARDS * JumpPower * 0.25 * CoyoteSlideRefreshCnt;//: FMath::Clamp((FMath::Clamp(HoldTime, 0.0f, 1.5f) + .4f) * JumpPower, Jump_Clamps.X, Jump_Clamps.Y) * FVector::UpVector + FVector::DownVector * JumpPower * 0.25f * CoyoteSlideRefreshCnt;
 
 	if (!is_on_floor()) CoyoteSlideRefreshCnt++;
 
@@ -1014,14 +1154,14 @@ void Playables::OnGroundJump()
 
 void Playables::OnWallJump()
 {
-	double HoldTime = getCharge(false) * 0.1;//(CustomMovementFlags & 15) * 0.1;
+	double HoldTime = GetCharge(false) * 0.1;//(CustomMovementFlags & 15) * 0.1;
 	Vector3 Vel = VEL();
 
 	Vel.y = Vel.y < 0 ? 0 : Vel.y; //Velocity.Z = Velocity.Z < 0 ? 0 : Velocity.Z;
-	Vel += (get_wall_normal().slide(UPWARDS) * Jump_Power * (std::clamp(HoldTime, 0.0, 1.5) + .2)
-		+ (UPWARDS * (std::clamp(HoldTime, 0.0, 0.75) * 1) * Jump_Power));
+	Vel += (get_wall_normal().slide(UPWARDS) * JumpPower * (std::clamp(HoldTime, 0.0, 1.5) + .2)
+		+ (UPWARDS * (std::clamp(HoldTime, 0.0, 0.75) * 1) * JumpPower));
 	//Velocity += (wallhit.Normal.GetSafeNormal2D() * WallRun_AttractionForce * (FMath::Clamp(HoldTime, 0.0f, 1.5f) + 1))
-			//+ (FVector::UpVector * (FMath::Clamp(HoldTime, 0.0f, 0.75f) * 2) * Jump_Power);
+			//+ (FVector::UpVector * (FMath::Clamp(HoldTime, 0.0f, 0.75f) * 2) * JumpPower);
 	set_velocity(Vel); //kill me 
 	SetMovementMode(Falling);
 }
@@ -1045,7 +1185,7 @@ void Playables::OnJumpDone(Vector3 JumpPower)
 				GetWorld()->GetTimerManager().ClearTimer(Safe_CoyoteTime);
 
 				GetWorld()->GetTimerManager().ClearTimer(Safe_JumpInputBuffer);*/
-		screenShake(VELMAG() * getCharge(false) * .005 + ChargeActionShakeIntensity, ChargeActionShakeTime + VELMAG() * getCharge(false) * .0005);
+		ScreenShake(VELMAG() * GetCharge(false) * .005 + ChargeActionShakeIntensity, ChargeActionShakeTime + VELMAG() * GetCharge(false) * .0005);
 		MaxDashStrength = VELMAG();
 		ChargeFlags &= 240;
 		CoyoteTimeActive = false;
@@ -1091,7 +1231,7 @@ void Playables::OnDashDone(float DashPower)
 		//	ChargeFlags &= 15;
 		//	UtilityFunctions::print("called"); 
 		//}
-	screenShake(VELMAG() * getCharge(true) * .005 + ChargeActionShakeIntensity, ChargeActionShakeTime + VELMAG() * getCharge(true) * .0005);
+	ScreenShake(VELMAG() * GetCharge(true) * .005 + ChargeActionShakeIntensity, ChargeActionShakeTime + VELMAG() * GetCharge(true) * .0005);
 	MaxDashStrength = VELMAG();
 	CanCoyoteTimeJump = false;
 	CoyoteTimeActive = false;

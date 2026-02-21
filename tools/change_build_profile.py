@@ -79,7 +79,7 @@ def update_sconstruct_vars(vars_to_set: Dict[str, bool]) -> None:
 
 def clean_build_files() -> None:
     try:
-        subprocess.run(["scons", "-c"], check=True, cwd=PARENT_DIR)
+        subprocess.run(["python", "-m", "SCons", "-c"], check=True, cwd=PARENT_DIR)
         print("Old build files cleaned successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Warning: Failed to run 'scons -c' to clean old build files: {e}. Continuing anyway.")

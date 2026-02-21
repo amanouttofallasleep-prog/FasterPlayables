@@ -134,7 +134,7 @@ namespace godot {
 		double WalkFriction = 2; 
 		
 		//the kind of "pull" factor for your direction keys (wasd)
-		double directionDrift = 2; 
+		double DirectionDrift = 2; 
 
 		//acceleration factor durring walking
 		double Acceleration = 20.;
@@ -143,13 +143,10 @@ namespace godot {
 		double minSlideVel = 7.;
 
 		//The power at which you jump AND dash sorry for naming it like this
-		double Jump_Power = 15.; 
+		double JumpPower = 15.; 
 
 		//the maximum actual power you are able to jump OR dash again im so if i PMO
 		Vector2 JumpClamps = Vector2(0.0, 15.0); 
-
-		//The attraction towards the wall Note:: i dont' think im using this LOL
-		double WallRun_Attraction = 6.; 
 
 		//The control the player while falling
 		double AirControlFactor = 0.5;
@@ -202,7 +199,7 @@ namespace godot {
 		//the rate at which you charge your jump decreasing this from 0.1 will change the mechanic
 		//above or equal to 0.1 your charge will be held at max when it reaches max
 		//lower your charge will not be held and you'll have a "misfire" which greatly screws up your input and actually makes you "trip"
-		double chargeIncrements = 0.1;
+		double ChargeIncrements = 0.1;
 
 		//How fast you want the camera to tilt on a wall or while walking
 		double TiltTimeFactor = 5; 
@@ -388,6 +385,90 @@ namespace godot {
 
 #pragma region Setter-Getters
 
+		double GetCrouchHeight() { return CrouchHeight; }
+		void SetCrouchHeight(double newVal) { CrouchHeight = newVal; }
+
+		double GetSlideGravity() { return SlideGravity; }
+		void SetSlideGravity(double newVal) { SlideGravity = newVal; }
+
+		double GetWallGravity() { return WallGravity;  }
+		void SetWallGravity(double newVal) { WallGravity = newVal; }
+
+		double GetSlideFloorGravityInfluence() { return SlideFloorGravityInfluence; }
+		void SetSlideFloorGravityInfluence(double newVal) { SlideFloorGravityInfluence = newVal; }
+
+		double GetSlideFriction() { return SlideFriction; }
+		void SetSlideFriction(double newVal) { SlideFriction = newVal; }
+
+		double GetWalkFriction() { return SlideFriction; }
+		void SetWalkFriction(double newVal) { WalkFriction = newVal; }
+
+		double GetDirectionDrift() { return DirectionDrift; }
+		void SetDirectionDrift(double newVal) { DirectionDrift = newVal; }
+
+		double GetMinSlideVel() { return minSlideVel; }
+		void SetMinSlideVel(double newVal) { minSlideVel = newVal; }
+
+		double GetJumpPower() { return JumpPower; }
+		void SetJumpPower(double newVal) { JumpPower = newVal; }
+
+		Vector2 GetJumpClamps() { return JumpClamps; }
+		void SetJumpClamps(Vector2 newVal) { JumpClamps = newVal; }
+
+		double GetAirControlFactor() { return AirControlFactor; }
+		void SetAirControlFactor(double newVal) { AirControlFactor = newVal; }
+
+		double GetMaxDashTime() { return MaxDashTime; }
+		void SetMaxDashTime(double newVal) { MaxDashTime = newVal; }
+
+		double GetLowerAllowedWall() { return LowerAllowedWall; }
+		void SetLowerAllowedWall(double newVal) { LowerAllowedWall = newVal; }
+
+		double GetLandShakeTime() { return LandShakeTime; }
+		void SetLandShakeTime(double newVal) { LandShakeTime = newVal; }
+
+		double GetLandShakeIntensity() { return LandShakeIntensity; }
+		void SetLandShakeIntensity(double newVal) { LandShakeIntensity = newVal; }
+
+		double GetChargeActionShakeTime() { return ChargeActionShakeTime; }
+		void SetChargeActionShakeTime(double newVal) { ChargeActionShakeTime = newVal; }
+
+		double GetChargeActionShakeIntensity() { return ChargeActionShakeIntensity; }
+		void SetChargeActionShakeIntensity(double newVal) { ChargeActionShakeIntensity = newVal; }
+
+		double GetShakeSpeed() { return ShakeSpeed; }
+		void SetShakeSpeed(double newVal) { ShakeSpeed = newVal; }
+
+		double GetShakeDecay() { return ShakeDecay; }
+		void SetShakeDecay(double newVal) { ShakeDecay = newVal; }
+
+		double GetFOVVelCap() { return FOVVelCap; }
+		void SetFOVVelCap(double newVal) { FOVVelCap = newVal; }
+
+		double GetWallTilt() { return WallTilt; }
+		void SetWallTilt(double newVal) { WallTilt = newVal; }
+
+		double GetWalkTilt() { return WalkTilt; }
+		void SetWalkTilt(double newVal) { WalkTilt = newVal; }
+
+		double GetCoyoteTime() { return CoyoteTime; }
+		void SetCoyoteTime(double newVal) { CoyoteTime = newVal; }
+
+		double GetChargeIncrements() { return ChargeIncrements; }
+		void SetChargeIncrements(double newVal) { ChargeIncrements = newVal; }
+
+		double GetTiltTimeFactor() { return TiltTimeFactor; }
+		void SetTiltTimeFactor(double newVal) { TiltTimeFactor = newVal; }
+
+		double GetBobbingFactor() { return BobbingFactor; }
+		void SetBobbingFactor(double newVal) { BobbingFactor = newVal; }
+
+		double GetMaxFOVIncrease() { return maxFOVIncrease; }
+		void SetMaxFOVIncrease(double newVal) { maxFOVIncrease = newVal; }
+
+		double GetBufferTime() { return BufferTime; }
+		void SetBufferTime(double newVal) { BufferTime = newVal; }
+
 		void SetCrouchFlag(bool newVal) {
 			if (newVal != IsCrouching()) UpdateCapsuleSize();
 			InputFlags = newVal ? InputFlags | CFLAG : InputFlags >> CFLAG << CFLAG;
@@ -410,6 +491,10 @@ namespace godot {
 		}
 		bool IsSprinting() { return (InputFlags & SFLAG) != 0; }
 		bool WasSprinting() { return (PrevInputFlags & SFLAG) != 0; }
+
+		////////////////////////////////////////////////////////////////////////////////////////
+		void SetGravity(double newVal) { Gravity = newVal; }
+		double GetGravity() { return Gravity; } 
 
 		void SetCoyoteTimeActive(bool newVal) { CoyoteTimeActive = newVal; }
 		bool GetCoyoteTimeActive() { return CoyoteTimeActive; }
@@ -453,6 +538,8 @@ namespace godot {
 		inline double VELMAG() const { return get_velocity().length(); }
 		inline Vector3 VEL() const { return get_velocity(); }
 		void UpdateCapsuleSize();
+
+
 #pragma endregion
 
 #pragma region Jump/Dash Functions
@@ -469,7 +556,7 @@ namespace godot {
 		virtual void OnJumpFailed();
 		virtual void OnDashDone(float DashPower);
 		virtual void OnDashFailed();
-		virtual bool CheckCanClamber() { return VELMAG() <= MaxRunSpeed && (!isJumping() && wasJumping()); }
+		virtual bool CheckCanClamber() { return VELMAG() <= MaxRunSpeed && (!IsJumping() && WasJumping()); }
 		//return Velocity.Size() <= Sprint_MaxWalkSpeed && (!Safe_bWantsToJump && Safe_bPrevWantsToJump);
 		void AbleToClamber();
 
