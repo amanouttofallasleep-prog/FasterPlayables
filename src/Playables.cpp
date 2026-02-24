@@ -8,18 +8,27 @@
 #include <godot_cpp/classes/camera3d.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/classes/engine.hpp>
-
-// macros.h
-// m_variant_type: e.g., Variant::FLOAT, Variant::INT, Variant::VECTOR3
-#define BIND_PROP(m_class, m_variant_type, m_name) \
-    ClassDB::bind_method(D_METHOD("get_", #m_name), &m_class::get_##m_name); \
-    ClassDB::bind_method(D_METHOD("set_" #m_name, "p_value"), &m_class::set_##m_name); \
-    ClassDB::add_property(#m_class, PropertyInfo(m_variant_type, #m_name), "set_" #m_name, "get_" #m_name);
+#include <godot_cpp/classes/wrapped.hpp>
+//#include "../build/BindMacros.h"
 
 using namespace godot;
 
 void Playables::_bind_methods()
 {
+	//BIND_FUNC(Playables, OnGroundDash);
+	//ClassDB::add_virtual_method(get_class_static(), MethodInfo(Variant::INT, "foo"));
+
+	BIND_VIRTUAL(Playables, OnGroundDash);
+	BIND_VIRTUAL(Playables, OnWallDash);
+	BIND_VIRTUAL(Playables, OnGroundJump);
+	BIND_VIRTUAL(Playables, OnWallJump);
+	BIND_VIRTUAL(Playables, OnJumpDone);
+	BIND_VIRTUAL(Playables, OnJumpFailed);
+	BIND_VIRTUAL(Playables, OnDashDone);
+	BIND_VIRTUAL(Playables, OnDashFailed);
+
+	BIND_SIG(Playables, OBJECT, OnGroundDash);
+
 	ClassDB::bind_method(D_METHOD("SetMaxWalkSpeed", "speed"), &Playables::SetMaxWalkSpeed);
 	ClassDB::bind_method(D_METHOD("GetMaxWalkSpeed"), &Playables::GetMaxWalkSpeed);
 	ClassDB::bind_method(D_METHOD("SetMaxRunSpeed", "speed"), &Playables::SetMaxRunSpeed);
@@ -74,8 +83,6 @@ void Playables::_bind_methods()
 	ClassDB::bind_method(D_METHOD("IsSprinting"), &Playables::IsSprinting);
 
 	ClassDB::bind_method(D_METHOD("init"), &Playables::init);
-
-
 
 	ClassDB::bind_method(D_METHOD("SetCrouchHeight", "newVal"), &Playables::SetCrouchHeight);
 	ClassDB::bind_method(D_METHOD("GetCrouchHeight"), &Playables::GetCrouchHeight);
@@ -193,7 +200,7 @@ void Playables::_bind_methods()
 
 	ADD_SUBGROUP("Slide", "slide_");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "SlideGravity"), "SetSlideGravity", "GetSlideGravity");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "SlideFloorGravityInfluence"), "SetSlideFloorGravityInfluence", "	GetSlideFloorGravityInfluence");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "SlideFloorGravityInfluence"), "SetSlideFloorGravityInfluence", "GetSlideFloorGravityInfluence");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "SlideFriction"), "SetSlideFriction", "GetSlideFriction");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "DirectionDrift"), "SetDirectionDrift", "GetDirectionDrift");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "minSlideVel"), "SetMinSlideVel", "GetMinSlideVel");
@@ -242,6 +249,7 @@ void Playables::_bind_methods()
 	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "CapPath"), "SetCapPath", "GetCapPath");
 	//ADD_PROPERTY(PropertyInfo(Variant::, "Cam"), "SetCam", "GetCam");
 
+	//BIND_PROP(Playables, Variant::FLOAT, MaxWalkSpeed);
 }
 
 Playables::Playables()
@@ -774,13 +782,13 @@ void Playables::UpdateCharacterStateBeforeMovement(double deltaSeconds)
 		SetMovementMode(EMovementMode::Walking);
 	}
 
-	if (MovementMode != EMovementMode::WallRunning && (!groundCheckRay->is_colliding() && is_on_wall_only() 
-		&& (LastWallNormal != get_wall_normal() || (LastYTouchedWall - LowerAllowedWall)) > get_global_position().y) && !(IsCrouching() && VELMAG() > minSlideVel))
+	if (MovementMode != EMovementMode::WallRunning && (!groundCheckRay->is_colliding() && is_on_wall_only()
+		&& (LastWallNormal != get_wall_normal() || (LastYTouchedWall - LowerAllowedWall) > get_global_position().y)) && !(IsCrouching() && VELMAG() > minSlideVel))
 	{
-		//UtilityFunctions::print("Wallrunning");
 		SetMovementMode(EMovementMode::WallRunning);
-
 	}
+	/*UtilityFunctions::print((MovementMode != EMovementMode::WallRunning && (!groundCheckRay->is_colliding() && is_on_wall_only()
+		&& (LastWallNormal != get_wall_normal() || (LastYTouchedWall - LowerAllowedWall) > get_global_position().y)) && !(IsCrouching() && VELMAG() > minSlideVel)));*/
 
 	if (MovementMode != Falling && !is_on_floor() && !(IsCrouching() && VELMAG() > minSlideVel) && !(!groundCheckRay->is_colliding() && is_on_wall_only()))
 	{
@@ -883,6 +891,7 @@ void Playables::init()
 		groundCheckRay->set_target_position(Vector3(0, -CapsuleBody->get_height() / 2, 0)); // 2 units down
 		groundCheckRay->set_enabled(true);
 		groundCheckRay->set_exclude_parent_body(true); // Don't hit self
+		groundCheckRay->set_visible(true); 
 	}
 	defaultFOV = Cam->get_fov(); 
 	/*if (raycast->is_colliding()) {
@@ -892,6 +901,12 @@ void Playables::init()
 
 		UtilityFunctions::print("Raycast hit at: ", hit_point);
 	}*/
+
+	//UtilityFunctions::print("we've called whole of init"); 
+	//GDVIRTUAL_CALL(init);
+	//UtilityFunctions::print("we've called end of init");
+
+
 }
 
 void Playables::SetUpJumpTimer(bool isStart)
@@ -1044,23 +1059,23 @@ bool Playables::CheckToJump()
 			if (MovementMode != EMovementMode::WallRunning)//(!IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun)) //normal jump from the floor
 			{
 				JumpNorm = is_on_floor() ? get_floor_normal() : UPWARDS; //CurrentFloor.bBlockingHit ? CurrentFloor.HitResult.Normal : FVector::UpVector;
-				OnGroundJump();
+				OnGroundJump_BRIDGE();
 			}
 			else //(IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun)) //jump from the wall no dash
 			{
 				//@todo
 				JumpNorm = get_wall_normal();//wallhit.Normal;
-				OnWallJump();
+				OnWallJump_BRIDGE();
 			}
 
-			OnJumpDone(JumpNorm * VELMAG());
+			OnJumpDone_BRIDGE();
 
 			return true;
 		}
 
 		if (!IsJumping() && WasJumping())
 		{
-			OnJumpFailed();
+			OnJumpFailed_BRIDGE();
 			return false;
 		}
 
@@ -1074,11 +1089,11 @@ bool Playables::CheckToJump()
 
 			if (MovementMode != EMovementMode::WallRunning)//(!IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun)) //dash on floor or during coyote time
 			{
-				OnGroundDash();
+				OnGroundDash_BRIDGE();
 			}
 			else //dash on wall
 			{
-				OnWallDash();
+				OnWallDash_BRIDGE();
 			}
 
 			//IS THIS IDIOT CODE TF?
@@ -1093,14 +1108,14 @@ bool Playables::CheckToJump()
 				//		ExitWallRun();
 				//	SetMovementMode(EMovementMode::MOVE_Falling);
 				//}
-			OnDashDone(BufferedDashValue);
+			OnDashDone_BRIDGE();
 
 			return true;
 		}
 
 		if (!IsSprinting() && WasSprinting())
 		{
-			OnDashFailed();
+			OnDashFailed_BRIDGE();
 			return false;
 		}
 
@@ -1118,7 +1133,7 @@ bool Playables::CheckToJump()
 }
 
 void Playables::OnGroundDash()
-{
+{	
 	double power = GetDashPower();
 	Vector3 Vel = VEL();
 	Vel = IsPlayerFreeDashing()						//checks if pressing w or nothing
@@ -1174,7 +1189,7 @@ void Playables::OnWallJump()
 	SetMovementMode(Falling);
 }
 
-void Playables::OnJumpDone(Vector3 JumpPower)
+void Playables::OnJumpDone()
 {
 	if (MovementMode == EMovementMode::WallRunning || !(MovementMode == EMovementMode::WallRunning))
 		//((IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun) && CanWallJump) || (!IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun) && CanJump))
@@ -1213,7 +1228,7 @@ void Playables::OnJumpFailed()
 	//GetWorld()->GetTimerManager().SetTimer(Safe_JumpInputBuffer, [this]() {BufferingJump = false; }, BufferTime, false);
 }
 
-void Playables::OnDashDone(float DashPower)
+void Playables::OnDashDone()
 {
 	//@todo wtf
 		////just checks if you actually dashed or could have dashed, stupid workaround I know
@@ -1258,133 +1273,133 @@ void Playables::OnDashFailed()
 }
 #pragma endregion
 
-void Playables::AbleToClamber()
-{
-	//@todo Clamber 
-	//Note: yeah fuck you dealing with this later
-		//	float capsuleHH = (PlayableOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
-		//	FVector currLocation = UpdatedComponent->GetComponentLocation() + capsuleHH * FVector::DownVector + FVector::UpVector * MaxStepHeight;
-		//	FVector clamberHeight = currLocation + FVector::UpVector * Clamber_MaxHeight;
-		//	FVector currForward = UpdatedComponent->GetForwardVector() * Clamber_Distance;
-		//	FVector currRight = UpdatedComponent->GetRightVector();
-		//
-		//	TArray<AActor*> IgnoredActors;
-		//	IgnoredActors.Add(PlayableOwner);
-		//	bool canClamber;
-		//	//deprecated code reuse as is no changes needed
-		//	//Looking for better solutions
-		//
-		//
-		//	//Will Look in front of the player if there is a thing there
-		//	canClamber = (GetWorld()->LineTraceSingleByChannel(ClamberCheck, clamberHeight + currForward, currLocation + currForward, ECC_WorldStatic, WallRunParamsQ, WallRunParamsR));
-		//	//DrawDebugLine(GetWorld(), clamberHeight + currForward, currLocation + currForward, FColor::Cyan, true, 100.0f, 0, 5.0f);
-		//
-		//
-		//	if (!canClamber || (ClamberCheck.Normal | FVector::UpVector) < 0.8)
-		//	{
-		//		ClamberCheck.bBlockingHit = false;
-		//		return;
-		//	}
-		//
-		//	float rememberHeight = ClamberCheck.Location.Z;
-		//	FVector rememberNormal = ClamberCheck.Normal;
-		//
-		//	//PlayableCapsuleCanStand(ClamberCheck); 
-		//#pragma region Capsule Trace
-		//	FVector StartLocation = ClamberCheck.Location; // Starting point of the trace
-		//	FVector EndLocation = StartLocation + (capsuleHH + 1) * FVector::UpVector;   // End point of the trace (direction you want to trace)
-		//	float CapsuleRadius = PlayableOwner->GetCapsuleComponent()->GetScaledCapsuleRadius();                // Radius of the capsule
-		//	float CapsuleHalfHeight = capsuleHH;
-		//	//DrawDebugSphere(GetWorld(), ClamberRunResult.Location, 10, 3, FColor::Red, true, 1);
-		//	FHitResult HitResult;
-		//	FHitResult NonInitialHit;
-		//
-		//	// Perform the capsule trace
-		//	bool SpaceOnTop =
-		//		!UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(),
-		//			EndLocation,
-		//			EndLocation,
-		//			CapsuleRadius, CapsuleHalfHeight, UEngineTypes::ConvertToTraceType(ECC_Visibility), true, IgnoredActors, EDrawDebugTrace::None, HitResult, true)
-		//		|| HitResult.PenetrationDepth <= 5
-		//		|| (!UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(),
-		//			(EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))),
-		//			(EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))),
-		//			CapsuleRadius, CapsuleHalfHeight, UEngineTypes::ConvertToTraceType(ECC_Visibility), true, IgnoredActors, EDrawDebugTrace::None, NonInitialHit, true)
-		//			&& (GetWorld()->LineTraceSingleByChannel(NonInitialHit,
-		//				(EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))),
-		//				(EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))) + FVector::DownVector * (CapsuleHalfHeight + Clamber_MaxHeight / 5),
-		//				ECC_WorldStatic, WallRunParamsQ, WallRunParamsR)
-		//				&& !((NonInitialHit.Normal | FVector::UpVector) < 0.8)));
-		//
-		//	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Value: %i"), SpaceOnTop));
-		//
-		//	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Dist to impact: %f"), (HitResult.Location - HitResult.ImpactPoint).Size()));
-		//	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Pen: %f"), HitResult.PenetrationDepth));
-		//
-		//	/*DrawDebugLine(GetWorld(), (EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))),
-		//		(EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))) + FVector::DownVector * (CapsuleHalfHeight + Clamber_MaxHeight / 5), FColor::Cyan, false, .0f, 0, 1.0f);*/
-		//
-		//
-		//		//Checks if crouching makes it able to go
-		//	if (!SpaceOnTop && !bWantsToCrouch)
-		//	{
-		//		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Enter Crouch check Pass"));
-		//
-		//		bool SpaceOnTopCrouched = !UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(),
-		//			ClamberCheck.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)) + FVector(0, 0, 1),
-		//			ClamberCheck.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)),
-		//			CapsuleRadius, CrouchedHalfHeight, UEngineTypes::ConvertToTraceType(ECC_Visibility), true, IgnoredActors, EDrawDebugTrace::None, HitResult, true)
-		//			|| HitResult.PenetrationDepth <= 5
-		//			|| (!UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(),
-		//				(ClamberCheck.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)) + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 1))) + FVector(0, 0, 1),
-		//				(ClamberCheck.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)) + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 1))),
-		//				CapsuleRadius, CrouchedHalfHeight, UEngineTypes::ConvertToTraceType(ECC_Visibility), true, IgnoredActors, EDrawDebugTrace::None, NonInitialHit, true)
-		//				&& (GetWorld()->LineTraceSingleByChannel(NonInitialHit,
-		//					(ClamberCheck.Location + FVector::UpVector * CrouchedHalfHeight + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 1))) + FVector(0, 0, 1),
-		//					(ClamberCheck.Location + FVector::UpVector * CrouchedHalfHeight + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 1))) + FVector::DownVector * (CrouchedHalfHeight + Clamber_MaxHeight / 5),
-		//					ECC_WorldStatic, WallRunParamsQ, WallRunParamsR)
-		//					&& !((NonInitialHit.Normal | FVector::UpVector) < 0.8)));
-		//		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Value: %i"), SpaceOnTop));
-		//
-		//		//DrawDebugLine(GetWorld(),ClamberRunResult.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)),(ClamberRunResult.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)) + ( HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 1))),FColor::Cyan, false, 1.0f, 0, 1.0f);
-		//
-		//		if (SpaceOnTopCrouched)
-		//		{
-		//			SpaceOnTop = true;
-		//			bWantsToCrouch = true;
-		//		}
-		//		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Value: %i"), SpaceOnTopCrouched));
-		//
-		//	}
-		//#pragma endregion
-		//
-		//	if (!SpaceOnTop || !canClamber)
-		//	{
-		//		ClamberCheck.bBlockingHit = false;
-		//		return;
-		//	}
-		//	canClamber = (GetWorld()->LineTraceSingleByChannel(ClamberCheck, currLocation, ClamberCheck.Location + FVector::DownVector, ECC_WorldStatic, WallRunParamsQ, WallRunParamsR));
-		//	//DrawDebugLine(GetWorld(), currLocation, ClamberCheck.Location + FVector::DownVector, FColor::Cyan, true, 100.0f, 0, 5.0f);
-		//
-		//	//Makes sure the hit of the capsule traces actually is reasonable if it hasn't returned already
-		//	//we return false if 
-		//	//we can't clamber | the normal of the floor isn't facing upwards
-		//	if (!canClamber || (HitResult.Normal | FVector::UpVector) > 0.8)
-		//	{
-		//		ClamberCheck.bBlockingHit = false;
-		//		return;
-		//	}
-		//
-		//	ClamberCheck.Location = FVector(ClamberCheck.Location.X, ClamberCheck.Location.Y, rememberHeight) - ClamberCheck.Normal * 10;
-		//	//DrawDebugLine(GetWorld(), currLocation, FVector(currLocation.X, currLocation.Y, rememberHeight + capsuleHH), FColor::Cyan, true, 1.0f, 0, 5.0f);
-		//	//DrawDebugLine(GetWorld(), FVector(currLocation.X, currLocation.Y, rememberHeight + capsuleHH), ClamberRunResult.Location + rememberNormal * 10, FColor::Cyan, true, 1.0f, 0, 5.0f);
-		//
-		//	//Commence final check so that the player isn't just underneath the platform and theres like a small gap to get in
-		//	if (GetWorld()->LineTraceSingleByChannel(HitResult, currLocation, FVector(currLocation.X, currLocation.Y, rememberHeight + capsuleHH), ECC_WorldStatic, WallRunParamsQ, WallRunParamsR)
-		//		|| GetWorld()->LineTraceSingleByChannel(HitResult, FVector(currLocation.X, currLocation.Y, rememberHeight + capsuleHH), ClamberCheck.Location + rememberNormal * 10, ECC_WorldStatic, WallRunParamsQ, WallRunParamsR))
-		//	{
-		//		ClamberCheck.bBlockingHit = false;
-		//		return;
-		//	}
-		//	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Cases Pass"));
-}
+//void Playables::AbleToClamber()
+//{
+//	//@todo Clamber 
+//	//Note: yeah fuck you dealing with this later
+//		//	float capsuleHH = (PlayableOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+//		//	FVector currLocation = UpdatedComponent->GetComponentLocation() + capsuleHH * FVector::DownVector + FVector::UpVector * MaxStepHeight;
+//		//	FVector clamberHeight = currLocation + FVector::UpVector * Clamber_MaxHeight;
+//		//	FVector currForward = UpdatedComponent->GetForwardVector() * Clamber_Distance;
+//		//	FVector currRight = UpdatedComponent->GetRightVector();
+//		//
+//		//	TArray<AActor*> IgnoredActors;
+//		//	IgnoredActors.Add(PlayableOwner);
+//		//	bool canClamber;
+//		//	//deprecated code reuse as is no changes needed
+//		//	//Looking for better solutions
+//		//
+//		//
+//		//	//Will Look in front of the player if there is a thing there
+//		//	canClamber = (GetWorld()->LineTraceSingleByChannel(ClamberCheck, clamberHeight + currForward, currLocation + currForward, ECC_WorldStatic, WallRunParamsQ, WallRunParamsR));
+//		//	//DrawDebugLine(GetWorld(), clamberHeight + currForward, currLocation + currForward, FColor::Cyan, true, 100.0f, 0, 5.0f);
+//		//
+//		//
+//		//	if (!canClamber || (ClamberCheck.Normal | FVector::UpVector) < 0.8)
+//		//	{
+//		//		ClamberCheck.bBlockingHit = false;
+//		//		return;
+//		//	}
+//		//
+//		//	float rememberHeight = ClamberCheck.Location.Z;
+//		//	FVector rememberNormal = ClamberCheck.Normal;
+//		//
+//		//	//PlayableCapsuleCanStand(ClamberCheck); 
+//		//#pragma region Capsule Trace
+//		//	FVector StartLocation = ClamberCheck.Location; // Starting point of the trace
+//		//	FVector EndLocation = StartLocation + (capsuleHH + 1) * FVector::UpVector;   // End point of the trace (direction you want to trace)
+//		//	float CapsuleRadius = PlayableOwner->GetCapsuleComponent()->GetScaledCapsuleRadius();                // Radius of the capsule
+//		//	float CapsuleHalfHeight = capsuleHH;
+//		//	//DrawDebugSphere(GetWorld(), ClamberRunResult.Location, 10, 3, FColor::Red, true, 1);
+//		//	FHitResult HitResult;
+//		//	FHitResult NonInitialHit;
+//		//
+//		//	// Perform the capsule trace
+//		//	bool SpaceOnTop =
+//		//		!UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(),
+//		//			EndLocation,
+//		//			EndLocation,
+//		//			CapsuleRadius, CapsuleHalfHeight, UEngineTypes::ConvertToTraceType(ECC_Visibility), true, IgnoredActors, EDrawDebugTrace::None, HitResult, true)
+//		//		|| HitResult.PenetrationDepth <= 5
+//		//		|| (!UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(),
+//		//			(EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))),
+//		//			(EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))),
+//		//			CapsuleRadius, CapsuleHalfHeight, UEngineTypes::ConvertToTraceType(ECC_Visibility), true, IgnoredActors, EDrawDebugTrace::None, NonInitialHit, true)
+//		//			&& (GetWorld()->LineTraceSingleByChannel(NonInitialHit,
+//		//				(EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))),
+//		//				(EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))) + FVector::DownVector * (CapsuleHalfHeight + Clamber_MaxHeight / 5),
+//		//				ECC_WorldStatic, WallRunParamsQ, WallRunParamsR)
+//		//				&& !((NonInitialHit.Normal | FVector::UpVector) < 0.8)));
+//		//
+//		//	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Value: %i"), SpaceOnTop));
+//		//
+//		//	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Dist to impact: %f"), (HitResult.Location - HitResult.ImpactPoint).Size()));
+//		//	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Pen: %f"), HitResult.PenetrationDepth));
+//		//
+//		//	/*DrawDebugLine(GetWorld(), (EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))),
+//		//		(EndLocation + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 3))) + FVector::DownVector * (CapsuleHalfHeight + Clamber_MaxHeight / 5), FColor::Cyan, false, .0f, 0, 1.0f);*/
+//		//
+//		//
+//		//		//Checks if crouching makes it able to go
+//		//	if (!SpaceOnTop && !bWantsToCrouch)
+//		//	{
+//		//		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Enter Crouch check Pass"));
+//		//
+//		//		bool SpaceOnTopCrouched = !UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(),
+//		//			ClamberCheck.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)) + FVector(0, 0, 1),
+//		//			ClamberCheck.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)),
+//		//			CapsuleRadius, CrouchedHalfHeight, UEngineTypes::ConvertToTraceType(ECC_Visibility), true, IgnoredActors, EDrawDebugTrace::None, HitResult, true)
+//		//			|| HitResult.PenetrationDepth <= 5
+//		//			|| (!UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(),
+//		//				(ClamberCheck.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)) + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 1))) + FVector(0, 0, 1),
+//		//				(ClamberCheck.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)) + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 1))),
+//		//				CapsuleRadius, CrouchedHalfHeight, UEngineTypes::ConvertToTraceType(ECC_Visibility), true, IgnoredActors, EDrawDebugTrace::None, NonInitialHit, true)
+//		//				&& (GetWorld()->LineTraceSingleByChannel(NonInitialHit,
+//		//					(ClamberCheck.Location + FVector::UpVector * CrouchedHalfHeight + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 1))) + FVector(0, 0, 1),
+//		//					(ClamberCheck.Location + FVector::UpVector * CrouchedHalfHeight + (HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 1))) + FVector::DownVector * (CrouchedHalfHeight + Clamber_MaxHeight / 5),
+//		//					ECC_WorldStatic, WallRunParamsQ, WallRunParamsR)
+//		//					&& !((NonInitialHit.Normal | FVector::UpVector) < 0.8)));
+//		//		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Value: %i"), SpaceOnTop));
+//		//
+//		//		//DrawDebugLine(GetWorld(),ClamberRunResult.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)),(ClamberRunResult.Location + (FVector::UpVector * (CrouchedHalfHeight + 3)) + ( HitResult.Normal.GetSafeNormal2D() * (HitResult.PenetrationDepth + 1))),FColor::Cyan, false, 1.0f, 0, 1.0f);
+//		//
+//		//		if (SpaceOnTopCrouched)
+//		//		{
+//		//			SpaceOnTop = true;
+//		//			bWantsToCrouch = true;
+//		//		}
+//		//		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Value: %i"), SpaceOnTopCrouched));
+//		//
+//		//	}
+//		//#pragma endregion
+//		//
+//		//	if (!SpaceOnTop || !canClamber)
+//		//	{
+//		//		ClamberCheck.bBlockingHit = false;
+//		//		return;
+//		//	}
+//		//	canClamber = (GetWorld()->LineTraceSingleByChannel(ClamberCheck, currLocation, ClamberCheck.Location + FVector::DownVector, ECC_WorldStatic, WallRunParamsQ, WallRunParamsR));
+//		//	//DrawDebugLine(GetWorld(), currLocation, ClamberCheck.Location + FVector::DownVector, FColor::Cyan, true, 100.0f, 0, 5.0f);
+//		//
+//		//	//Makes sure the hit of the capsule traces actually is reasonable if it hasn't returned already
+//		//	//we return false if 
+//		//	//we can't clamber | the normal of the floor isn't facing upwards
+//		//	if (!canClamber || (HitResult.Normal | FVector::UpVector) > 0.8)
+//		//	{
+//		//		ClamberCheck.bBlockingHit = false;
+//		//		return;
+//		//	}
+//		//
+//		//	ClamberCheck.Location = FVector(ClamberCheck.Location.X, ClamberCheck.Location.Y, rememberHeight) - ClamberCheck.Normal * 10;
+//		//	//DrawDebugLine(GetWorld(), currLocation, FVector(currLocation.X, currLocation.Y, rememberHeight + capsuleHH), FColor::Cyan, true, 1.0f, 0, 5.0f);
+//		//	//DrawDebugLine(GetWorld(), FVector(currLocation.X, currLocation.Y, rememberHeight + capsuleHH), ClamberRunResult.Location + rememberNormal * 10, FColor::Cyan, true, 1.0f, 0, 5.0f);
+//		//
+//		//	//Commence final check so that the player isn't just underneath the platform and theres like a small gap to get in
+//		//	if (GetWorld()->LineTraceSingleByChannel(HitResult, currLocation, FVector(currLocation.X, currLocation.Y, rememberHeight + capsuleHH), ECC_WorldStatic, WallRunParamsQ, WallRunParamsR)
+//		//		|| GetWorld()->LineTraceSingleByChannel(HitResult, FVector(currLocation.X, currLocation.Y, rememberHeight + capsuleHH), ClamberCheck.Location + rememberNormal * 10, ECC_WorldStatic, WallRunParamsQ, WallRunParamsR))
+//		//	{
+//		//		ClamberCheck.bBlockingHit = false;
+//		//		return;
+//		//	}
+//		//	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Cases Pass"));
+//}

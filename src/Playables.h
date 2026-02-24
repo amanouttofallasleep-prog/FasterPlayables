@@ -10,14 +10,7 @@
 #define CUSTOMFLAG4 64
 #define CUSTOMFLAG5 128
 
-//completed
-
-//todo
 //Add Camera Shake 
-	// Should be able to happen everytime you land
-	// When you dash
-	// When you jump
-	// 
 //Walk/Run head bobbing? 
 
 //Add Clamber really don't wanna tbh Edgecases:
@@ -25,27 +18,8 @@
 	//make sure that there is a clear path to that object 
 	//make sure that the capsule can be on that object without clipping 
 	//make sure that the capsule isn't 
-
-//@todo Buffer
-//@todo CoyoteTime
-//@todo Clamber
+	// 
 //@todo func
-
-
-//add physics tick functions specified in MovementModes
-//add jumping 
-//add crouching 
-//add sprinting
-//add wall running and sliding and all that fun stuff
-//add gaddamn clambering
-
-
-//polish
-//Input buffering 
-//Coyote time
-//fov stretching
-//camera shaking, running sliding up hill and what not
-//settings and what not
 
 #include <godot_cpp/classes/character_body3d.hpp>
 #include <godot_cpp/classes/input.hpp>
@@ -57,7 +31,8 @@
 #include <godot_cpp/classes/collision_shape3d.hpp>
 #include <godot_cpp/classes/ray_cast3d.hpp>
 #include <godot_cpp/classes/fast_noise_lite.hpp>
-
+#include <godot_cpp/core/gdvirtual.gen.inc>
+#include "BindMacros.h"
 
 enum EMovementMode
 {
@@ -229,6 +204,8 @@ namespace godot {
 		Timer* MaxDashTimer;
 
 		static void _bind_methods();
+
+		GDVIRTUAL0(_OnGroundDash);
 
 #pragma region Stateful/Input Variables
 
@@ -548,33 +525,36 @@ namespace godot {
 		virtual bool CheckCanDash() { return (!IsSprinting() && WasSprinting()) || BufferingDash/*@todo Buffer && @todo IsPlayerFreeDashing()*/; }
 		//return (!Safe_bWantsToSprint && Safe_bPrevWantsToSprint || BufferingDash) && ((IsPlayerFreeDashing() && CanDashFreely) || (!IsPlayerFreeDashing() && CanDashLaterally));
 
-		virtual void OnGroundDash();
-		virtual void OnWallDash();
+		BIND_BRIDGE(void, OnGroundDash);
+		BIND_BRIDGE(void, OnWallDash);
+		BIND_BRIDGE(void, OnGroundJump);
+		BIND_BRIDGE(void, OnWallJump);
+		BIND_BRIDGE(void, OnJumpDone);
+		BIND_BRIDGE(void, OnJumpFailed);
+		BIND_BRIDGE(void, OnDashDone);
+		BIND_BRIDGE(void, OnDashFailed);
+
+		/*void OnGroundDash();
+		void OnWallDash();
 		virtual void OnGroundJump();
 		virtual void OnWallJump();
 		virtual void OnJumpDone(Vector3 JumpPower);
 		virtual void OnJumpFailed();
 		virtual void OnDashDone(float DashPower);
-		virtual void OnDashFailed();
-		virtual bool CheckCanClamber() { return VELMAG() <= MaxRunSpeed && (!IsJumping() && WasJumping()); }
-		//return Velocity.Size() <= Sprint_MaxWalkSpeed && (!Safe_bWantsToJump && Safe_bPrevWantsToJump);
-		void AbleToClamber();
+		virtual void OnDashFailed(); */
+		//virtual bool CheckCanClamber() { return VELMAG() <= MaxRunSpeed && (!IsJumping() && WasJumping()); }
+		//void AbleToClamber();
 
+		//BIND_BRIDGE(double, GetDashPower); 
 		double GetDashPower();
+		//BIND_BRIDGE(bool, IsPlayerFreeDashing);
 		bool IsPlayerFreeDashing(); 
-
+		//BIND_BRIDGE(Vector3, getForwardDir);
 		Vector3 getForwardDir() const; 
 #pragma endregion
 
-
 		void ChargeAction(bool isDash);
 
-	/*	void chargeDash() {
-			if ((ChargeFlags >> 4 != 15)) 	ChargeFlags = (((ChargeFlags >> 4) + 1) << 4) + (ChargeFlags & 15);
-		}
-		void chargeJump() {
-			if (((ChargeFlags & 15) != 15)) ChargeFlags = ((ChargeFlags & 15) + 1) + (ChargeFlags & 240);
-		}*/
 		int GetCharge(bool isDash) { return !isDash ? ChargeFlags & 15 : ChargeFlags >> 4; }
 
 		void init(); 
@@ -611,7 +591,7 @@ namespace godot {
 		Vector3 GetMirroredVector(Vector3 a, Vector3 b) { return a - b * (2.f * (a.dot(b))); }
 
 		bool IsPlayerSlidingUphill() { return MovementMode == Sliding && (GetSlideDirection().normalized().slide(get_floor_normal()).dot(VEL()) < 0.0); }
-
+		//BIND_BRIDGE_1(void, CamUpdate, double, delta);
 		void CamUpdate(double delta); 
 
 		Vector3 GetPlayerFoward() { return -get_global_basis().get_column(2); }
