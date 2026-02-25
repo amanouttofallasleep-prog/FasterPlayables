@@ -603,9 +603,8 @@ namespace godot {
 		BIND_BRIDGE_VOID_1(CamUpdate, double, delta);
 		//void CamUpdate(double delta); 
 
-		Vector3 GetPlayerFoward() { return -get_global_basis().get_column(2); }
-		Vector3 GetPlayerRight() { return get_global_basis().get_column(0); }
-
+		inline Vector3 GetPlayerFoward() { return -get_global_basis().get_column(2); }
+		inline Vector3 GetPlayerRight() { return get_global_basis().get_column(0); }
 	};
 }
 

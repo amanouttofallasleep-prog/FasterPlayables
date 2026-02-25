@@ -632,6 +632,13 @@ void Playables::SlidingTick(double delta, int iteration)
 		Vector3 dir = GetSlideDirection();
 		vel += SlideFloorGravityInfluence * dir.normalized().slide(UPWARDS) * timeTick * dir.length();
 
+		if (!PrevFloor && is_on_floor())
+		{
+			Vector3 floorprojection = SlideGravity * get_floor_normal().slide(UPWARDS).slide(get_floor_normal()).normalized();
+			currFriction = 0;
+			set_velocity(get_velocity() + floorprojection);
+		}
+
 		//DriftSlide()
 		//FVector bounceDirection = Velocity.MirrorByVector(Hit.Normal);	//Negate the velocity mirrored by the hit normal
 		//Velocity = bounceDirection;
@@ -661,6 +668,9 @@ void Playables::SlidingTick(double delta, int iteration)
 
 void Playables::WallRunTick(double delta, int iteration)
 {
+
+	//UtilityFunctions::print("WallNormal: ", get_wall_normal(), "IsOnWall: ", is_on_wall(), "GroundRay: ", groundCheckRay->is_colliding());
+
 	float remainingTime = delta;
 	while ((remainingTime >= MIN_TICK_TIME) && (iteration < MAXITER))
 	{
@@ -680,7 +690,7 @@ void Playables::WallRunTick(double delta, int iteration)
 		vel = vel.slide(get_wall_normal()) + DOWNWARDS * WallGravity * timeTick;
 		vel = IsCrouching() ? vel * (1 - timeTick * 3) : vel;
 		//setting up the final movement
-		set_velocity(vel /*+ (-get_wall_normal().slide(UPWARDS) * (1.0 - get_wall_normal().dot(UPWARDS)))*/);
+		set_velocity(vel + (-get_wall_normal()));
 		move_and_slide();
 
 		//Checking if should be another state
@@ -742,12 +752,11 @@ void Playables::OnMovementModeChanged(int PreviousMovementModeINT)
 
 	if (PreviousMovementMode == Falling && is_on_floor())
 	{
-		Vector3 floorprojection = get_floor_normal().slide(UPWARDS).slide(get_floor_normal()).normalized() * -(get_velocity().dot(-get_floor_normal()));
+		Vector3 floorprojection = !get_floor_normal().is_equal_approx(UPWARDS) ? Gravity * get_floor_normal().slide(UPWARDS).slide(get_floor_normal()).normalized() : Vector3();
 		currFriction = 0;
-		set_velocity(get_velocity() + floorprojection);
+		set_velocity(VEL() + floorprojection);
+		//UtilityFunctions::print(floorprojection.length());	
 	}
-
-	LastWallNormal = is_on_floor() ? Vector3() : LastWallNormal; 
 
 	switch (MovementMode)
 	{
@@ -775,7 +784,8 @@ void Playables::UpdateCharacterStateBeforeMovement(double deltaSeconds)
 	MaxDashStrength = VELMAG() > MaxDashStrength ? VELMAG() : MaxDashStrength;
 	CanCoyoteTimeJump = is_on_floor() || MovementMode == WallRunning ? true : CanCoyoteTimeJump;
 	CoyoteSlideRefreshCnt = is_on_floor() ? 0 : CoyoteSlideRefreshCnt;
-	if (CheckToJump()) move_and_slide();
+	if (CheckToJump()) move_and_slide(); 
+	LastWallNormal = is_on_floor() ? Vector3() : LastWallNormal;
 
 	PrevFloor = is_on_floor();
 	Basis b = get_global_transform().get_basis();
@@ -787,14 +797,12 @@ void Playables::UpdateCharacterStateBeforeMovement(double deltaSeconds)
 		//UtilityFunctions::print("Walking");
 		SetMovementMode(EMovementMode::Walking);
 	}
-
-	if (MovementMode != EMovementMode::WallRunning && (!groundCheckRay->is_colliding() && is_on_wall()
+	groundCheckRay->force_raycast_update(); 
+	if (MovementMode != EMovementMode::WallRunning && (is_on_wall_only() && !groundCheckRay->is_colliding()
 		&& (LastWallNormal != get_wall_normal() || (LastYTouchedWall - LowerAllowedWall) > get_global_position().y)) && !(IsCrouching() && VELMAG() > minSlideVel))
 	{
 		SetMovementMode(EMovementMode::WallRunning);
 	}
-	/*UtilityFunctions::print((MovementMode != EMovementMode::WallRunning && (!groundCheckRay->is_colliding() && is_on_wall_only()
-		&& (LastWallNormal != get_wall_normal() || (LastYTouchedWall - LowerAllowedWall) > get_global_position().y)) && !(IsCrouching() && VELMAG() > minSlideVel)));*/
 
 	if (MovementMode != Falling && !is_on_floor() && !(IsCrouching() && VELMAG() > minSlideVel) && !(!groundCheckRay->is_colliding() && is_on_wall_only()))
 	{
