@@ -205,7 +205,7 @@ namespace godot {
 
 		static void _bind_methods();
 
-		GDVIRTUAL0(_OnGroundDash);
+		//GDVIRTUAL0(_OnGroundDash);
 
 #pragma region Stateful/Input Variables
 
@@ -260,6 +260,8 @@ namespace godot {
 		double MaxDashStrength = 0;
 
 		double currFriction = 0;
+
+		double defaultHeight = 0; 
 #pragma endregion
 
 #pragma region CameraFeelVars
@@ -348,12 +350,20 @@ namespace godot {
 
 		void WallRunTick(double delta, int iteration); 
 
+		BIND_BRIDGE_VOID_2( StartNewPhysics, double, deltatime, int, Iteration); 
+		//void StartNewPhysics(double deltaTime, int Iterations);
+		//void OnMovementModeChanged(EMovementMode PreviousMovementMode);
+		BIND_BRIDGE_VOID_1( OnMovementModeChanged, int, PreviousMovementModeINT);
 
-		void StartNewPhysics(double deltaTime, int Iterations);
-		void OnMovementModeChanged(EMovementMode PreviousMovementMode);
-		void OnMovementUpdated(double DeltaSeconds, const Vector3& OldLocation, const Vector3& OldVelocity);
-		void UpdateCharacterStateBeforeMovement(double deltaSeconds); //this sets the state of the player 
-		void UpdateCharacterStateAfterMovement(double deltaSeconds); //this sets the state of the player 
+	//	void OnMovementUpdated(double DeltaSeconds, const Vector3& OldLocation, const Vector3& OldVelocity);
+	//	BIND_BRIDGE_3(void, OnMovementModeChanged, EMovementMode, PreviousMovementMode);
+
+
+		//void UpdateCharacterStateBeforeMovement(double deltaSeconds); //this sets the state of the player 
+		BIND_BRIDGE_VOID_1( UpdateCharacterStateBeforeMovement, double, deltaSeconds);
+
+		//void UpdateCharacterStateAfterMovement(double deltaSeconds); //this sets the state of the player 
+		BIND_BRIDGE_VOID_1( UpdateCharacterStateAfterMovement, double, deltaSeconds);
 
 		//enter and exit physics functions
 		void ExitWallRun(); 
@@ -447,23 +457,21 @@ namespace godot {
 		void SetBufferTime(double newVal) { BufferTime = newVal; }
 
 		void SetCrouchFlag(bool newVal) {
-			if (newVal != IsCrouching()) UpdateCapsuleSize();
 			InputFlags = newVal ? InputFlags | CFLAG : InputFlags >> CFLAG << CFLAG;
+			if (newVal != WasCrouching()) UpdateCapsuleSize();
 		}
 		bool IsCrouching() { return (InputFlags & CFLAG) != 0; }
 		bool WasCrouching() { return (PrevInputFlags & CFLAG) != 0; }
 
 		void SetJumpFlag(bool newVal) {
-			if (newVal != IsJumping())
-				SetUpJumpTimer(newVal);
+			if (newVal != IsJumping()) SetUpJumpTimer(newVal);
 			InputFlags = newVal ? InputFlags | JFLAG : InputFlags & ~(JFLAG);
 		}
 		bool IsJumping() { return (InputFlags & JFLAG) != 0; }
 		bool WasJumping() { return (PrevInputFlags & JFLAG) != 0; }
 
 		void SetSprintFlag(bool newVal) {
-			if (newVal != IsSprinting())
-				SetUpDashTimer(newVal);
+			if (newVal != IsSprinting()) SetUpDashTimer(newVal);
 			InputFlags = newVal ? InputFlags | SFLAG : InputFlags & ~(SFLAG);
 		}
 		bool IsSprinting() { return (InputFlags & SFLAG) != 0; }
@@ -520,19 +528,20 @@ namespace godot {
 #pragma endregion
 
 #pragma region Jump/Dash Functions
-		bool CheckToJump();
+		BIND_BRIDGE(bool, CheckToJump);
+		//bool CheckToJump();
 		virtual bool CheckCanJump() { return (!IsJumping() && WasJumping()) || BufferingJump/*@todo Buffer*/; }	//return (!Safe_bWantsToJump && Safe_bPrevWantsToJump) || BufferingJump;
 		virtual bool CheckCanDash() { return (!IsSprinting() && WasSprinting()) || BufferingDash/*@todo Buffer && @todo IsPlayerFreeDashing()*/; }
 		//return (!Safe_bWantsToSprint && Safe_bPrevWantsToSprint || BufferingDash) && ((IsPlayerFreeDashing() && CanDashFreely) || (!IsPlayerFreeDashing() && CanDashLaterally));
 
-		BIND_BRIDGE(void, OnGroundDash);
-		BIND_BRIDGE(void, OnWallDash);
-		BIND_BRIDGE(void, OnGroundJump);
-		BIND_BRIDGE(void, OnWallJump);
-		BIND_BRIDGE(void, OnJumpDone);
-		BIND_BRIDGE(void, OnJumpFailed);
-		BIND_BRIDGE(void, OnDashDone);
-		BIND_BRIDGE(void, OnDashFailed);
+		BIND_BRIDGE_VOID(OnGroundDash);
+		BIND_BRIDGE_VOID(OnWallDash);
+		BIND_BRIDGE_VOID(OnGroundJump);
+		BIND_BRIDGE_VOID(OnWallJump);
+		BIND_BRIDGE_VOID(OnJumpDone);
+		BIND_BRIDGE_VOID(OnJumpFailed);
+		BIND_BRIDGE_VOID(OnDashDone);
+		BIND_BRIDGE_VOID(OnDashFailed);
 
 		/*void OnGroundDash();
 		void OnWallDash();
@@ -591,8 +600,8 @@ namespace godot {
 		Vector3 GetMirroredVector(Vector3 a, Vector3 b) { return a - b * (2.f * (a.dot(b))); }
 
 		bool IsPlayerSlidingUphill() { return MovementMode == Sliding && (GetSlideDirection().normalized().slide(get_floor_normal()).dot(VEL()) < 0.0); }
-		//BIND_BRIDGE_1(void, CamUpdate, double, delta);
-		void CamUpdate(double delta); 
+		BIND_BRIDGE_VOID_1(CamUpdate, double, delta);
+		//void CamUpdate(double delta); 
 
 		Vector3 GetPlayerFoward() { return -get_global_basis().get_column(2); }
 		Vector3 GetPlayerRight() { return get_global_basis().get_column(0); }

@@ -26,7 +26,16 @@ void Playables::_bind_methods()
 	BIND_VIRTUAL(Playables, OnJumpFailed);
 	BIND_VIRTUAL(Playables, OnDashDone);
 	BIND_VIRTUAL(Playables, OnDashFailed);
-
+	/*BIND_VIRTUAL_2(Playables, StartNewPhysics, Variant::FLOAT, deltaTime, Variant::FLOAT, Iteration);
+	BIND_VIRTUAL_1(Playables, OnMovementModeChanged, Variant::INT, PreviousMovementModeINT);
+	BIND_VIRTUAL_1(Playables, UpdateCharacterStateBeforeMovement, Variant::FLOAT, deltaSeconds);
+	BIND_VIRTUAL_1(Playables, UpdateCharacterStateAfterMovement, Variant::FLOAT, deltaSeconds);*/
+	BIND_FUNC(Playables, CamUpdate);
+	BIND_VIRTUAL(Playables, CheckToJump); 
+	BIND_FUNC(Playables, StartNewPhysics);
+	BIND_FUNC(Playables, OnMovementModeChanged);
+	BIND_FUNC(Playables, UpdateCharacterStateBeforeMovement);
+	BIND_FUNC(Playables, UpdateCharacterStateAfterMovement);
 	BIND_SIG(Playables, OBJECT, OnGroundDash);
 
 	ClassDB::bind_method(D_METHOD("SetMaxWalkSpeed", "speed"), &Playables::SetMaxWalkSpeed);
@@ -120,7 +129,7 @@ void Playables::_bind_methods()
 	ClassDB::bind_method(D_METHOD("SetMaxDashTime", "newVal"), &Playables::SetMaxDashTime);
 	ClassDB::bind_method(D_METHOD("GetMaxDashTime"), &Playables::GetMaxDashTime);
 
-	ClassDB::bind_method(D_METHOD("SetLowerAllowedWallrintFlag", "newVal"), &Playables::SetLowerAllowedWall);
+	ClassDB::bind_method(D_METHOD("SetLowerAllowedWall", "newVal"), &Playables::SetLowerAllowedWall);
 	ClassDB::bind_method(D_METHOD("GetLowerAllowedWall"), &Playables::GetLowerAllowedWall);
 
 	ClassDB::bind_method(D_METHOD("SetLandShakeTime", "newVal"), &Playables::SetLandShakeTime);
@@ -439,7 +448,7 @@ void Playables::PhysTick(double delta, int iteration)
 		return;
 	}
 
-	UpdateCharacterStateBeforeMovement(delta);
+	UpdateCharacterStateBeforeMovementBRIDGE(delta);
 
 	switch (MovementMode)
 	{
@@ -461,7 +470,7 @@ void Playables::PhysTick(double delta, int iteration)
 		break;
 	}
 
-	UpdateCharacterStateAfterMovement(delta);
+	UpdateCharacterStateAfterMovementBRIDGE(delta);
 	//Vector3 vel = VEL(); 
 	//Basis b = get_global_transform().get_basis();
 	//Vector3 forward = -b.get_column(2) * -InputDirection.y;
@@ -525,7 +534,7 @@ void Playables::WalkTick(double delta, int iteration)
 		if (!is_on_floor())
 		{
 			SetMovementMode(EMovementMode::Falling);
-			StartNewPhysics(remainingTime, iteration);
+			StartNewPhysicsBRIDGE(remainingTime, iteration);
 			return;
 		}
 	}
@@ -562,7 +571,7 @@ void Playables::FallingTick(double delta, int iteration)
 			ScreenShake(abs(vel.y) * .1 + LandShakeIntensity, LandShakeTime + abs(vel.y) * 0.001);
 			//UtilityFunctions::print(abs(vel.y) * 0.1);
 			SetMovementMode(EMovementMode::Walking);
-			StartNewPhysics(remainingTime, iteration);
+			StartNewPhysicsBRIDGE(remainingTime, iteration);
 			return;
 		}
 		//UtilityFunctions::print("falling"); 
@@ -678,7 +687,7 @@ void Playables::WallRunTick(double delta, int iteration)
 		if (!is_on_wall() || is_on_floor())
 		{
 			SetMovementMode(Falling);
-			StartNewPhysics(remainingTime, iteration);
+			StartNewPhysicsBRIDGE(remainingTime, iteration);
 			return;
 		}
 	}
@@ -712,8 +721,9 @@ void Playables::StartNewPhysics(double deltaTime, int Iterations)
 	}
 }
 
-void Playables::OnMovementModeChanged(EMovementMode PreviousMovementMode)
+void Playables::OnMovementModeChanged(int PreviousMovementModeINT)
 {
+	EMovementMode PreviousMovementMode = (EMovementMode)PreviousMovementModeINT;
 	//UtilityFunctions::print(PreviousMovementMode, "->", MovementMode); 
 	if (CanCoyoteTimeJump && MovementMode == Falling) 
 	{
@@ -760,10 +770,6 @@ void Playables::OnMovementModeChanged(EMovementMode PreviousMovementMode)
 	}
 }
 
-void Playables::OnMovementUpdated(double DeltaSeconds, const Vector3& OldLocation, const Vector3& OldVelocity)
-{
-}
-
 void Playables::UpdateCharacterStateBeforeMovement(double deltaSeconds)
 {
 	MaxDashStrength = VELMAG() > MaxDashStrength ? VELMAG() : MaxDashStrength;
@@ -782,7 +788,7 @@ void Playables::UpdateCharacterStateBeforeMovement(double deltaSeconds)
 		SetMovementMode(EMovementMode::Walking);
 	}
 
-	if (MovementMode != EMovementMode::WallRunning && (!groundCheckRay->is_colliding() && is_on_wall_only()
+	if (MovementMode != EMovementMode::WallRunning && (!groundCheckRay->is_colliding() && is_on_wall()
 		&& (LastWallNormal != get_wall_normal() || (LastYTouchedWall - LowerAllowedWall) > get_global_position().y)) && !(IsCrouching() && VELMAG() > minSlideVel))
 	{
 		SetMovementMode(EMovementMode::WallRunning);
@@ -802,7 +808,7 @@ void Playables::UpdateCharacterStateBeforeMovement(double deltaSeconds)
 		SetMovementMode(EMovementMode::Sliding);
 	}	
 
-	CamUpdate(deltaSeconds); 
+	CamUpdateBRIDGE(deltaSeconds); 
 }
 
 void Playables::UpdateCharacterStateAfterMovement(double deltaSeconds)
@@ -888,10 +894,11 @@ void Playables::init()
 
 	if(groundCheckRay && CapsuleBody)
 	{
-		groundCheckRay->set_target_position(Vector3(0, -CapsuleBody->get_height() / 2, 0)); // 2 units down
+		groundCheckRay->set_target_position(Vector3(0, -CapsuleBody->get_height() / 3, 0)); // 2 units down
 		groundCheckRay->set_enabled(true);
 		groundCheckRay->set_exclude_parent_body(true); // Don't hit self
 		groundCheckRay->set_visible(true); 
+		defaultHeight = CapsuleBody->get_height(); 
 	}
 	defaultFOV = Cam->get_fov(); 
 	/*if (raycast->is_colliding()) {
@@ -989,7 +996,7 @@ void Playables::UpdateCapsuleSize()
 		}
 		else 
 		{
-			CapsuleBody->set_height(CrouchHeight);
+			CapsuleBody->set_height(defaultHeight);
 			Vector3 pos = CapBody->get_position();
 			pos.y = 0;  // Center the capsule
 			CapBody->set_position(pos);
@@ -1059,23 +1066,23 @@ bool Playables::CheckToJump()
 			if (MovementMode != EMovementMode::WallRunning)//(!IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun)) //normal jump from the floor
 			{
 				JumpNorm = is_on_floor() ? get_floor_normal() : UPWARDS; //CurrentFloor.bBlockingHit ? CurrentFloor.HitResult.Normal : FVector::UpVector;
-				OnGroundJump_BRIDGE();
+				OnGroundJumpBRIDGE();
 			}
 			else //(IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun)) //jump from the wall no dash
 			{
 				//@todo
 				JumpNorm = get_wall_normal();//wallhit.Normal;
-				OnWallJump_BRIDGE();
+				OnWallJumpBRIDGE();
 			}
 
-			OnJumpDone_BRIDGE();
+			OnJumpDoneBRIDGE();
 
 			return true;
 		}
 
 		if (!IsJumping() && WasJumping())
 		{
-			OnJumpFailed_BRIDGE();
+			OnJumpFailedBRIDGE();
 			return false;
 		}
 
@@ -1089,11 +1096,11 @@ bool Playables::CheckToJump()
 
 			if (MovementMode != EMovementMode::WallRunning)//(!IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun)) //dash on floor or during coyote time
 			{
-				OnGroundDash_BRIDGE();
+				OnGroundDashBRIDGE();
 			}
 			else //dash on wall
 			{
-				OnWallDash_BRIDGE();
+				OnWallDashBRIDGE();
 			}
 
 			//IS THIS IDIOT CODE TF?
@@ -1108,14 +1115,14 @@ bool Playables::CheckToJump()
 				//		ExitWallRun();
 				//	SetMovementMode(EMovementMode::MOVE_Falling);
 				//}
-			OnDashDone_BRIDGE();
+			OnDashDoneBRIDGE();
 
 			return true;
 		}
 
 		if (!IsSprinting() && WasSprinting())
 		{
-			OnDashFailed_BRIDGE();
+			OnDashFailedBRIDGE();
 			return false;
 		}
 
