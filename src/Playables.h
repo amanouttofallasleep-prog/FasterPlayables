@@ -196,6 +196,7 @@ namespace godot {
 		NodePath CapPath;
 
 		RayCast3D* groundCheckRay;
+		RayCast3D* wallCheckRay;
 
 		Timer* JumpTimer;
 		Timer* DashTimer;

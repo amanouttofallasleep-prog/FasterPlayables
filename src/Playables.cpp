@@ -668,20 +668,17 @@ void Playables::SlidingTick(double delta, int iteration)
 
 void Playables::WallRunTick(double delta, int iteration)
 {
-
-	//UtilityFunctions::print("WallNormal: ", get_wall_normal(), "IsOnWall: ", is_on_wall(), "GroundRay: ", groundCheckRay->is_colliding());
-
 	float remainingTime = delta;
 	while ((remainingTime >= MIN_TICK_TIME) && (iteration < MAXITER))
 	{
 		iteration++;
 		float timeTick = GetSimulationTimeStep(remainingTime, iteration);
 		remainingTime -= timeTick;
-		Vector3 vel = VEL();
+		Vector3 vel = VEL() + (LastWallNormal.dot(get_wall_normal()) > 0.9 ? LastWallNormal : Vector3()) * 9;
 
 		LastWallNormal = get_wall_normal();
 		LastYTouchedWall = get_global_position().y;
-
+		 
 		if (!InputDirection.is_zero_approx())
 		{
 			Vector3 tempVel = vel + RelativeInputDirection.slide(get_wall_normal()).slide(UPWARDS) * Acceleration * timeTick;
@@ -690,12 +687,13 @@ void Playables::WallRunTick(double delta, int iteration)
 		vel = vel.slide(get_wall_normal()) + DOWNWARDS * WallGravity * timeTick;
 		vel = IsCrouching() ? vel * (1 - timeTick * 3) : vel;
 		//setting up the final movement
-		set_velocity(vel + (-get_wall_normal()));
+		set_velocity(vel + (9 * -LastWallNormal));
 		move_and_slide();
 
 		//Checking if should be another state
 		if (!is_on_wall() || is_on_floor())
 		{
+			//UtilityFunctions::print("print"); 
 			SetMovementMode(Falling);
 			StartNewPhysicsBRIDGE(remainingTime, iteration);
 			return;
@@ -767,7 +765,7 @@ void Playables::OnMovementModeChanged(int PreviousMovementModeINT)
 		//UtilityFunctions::print("Sliding");
 		break;
 	case WallRunning:
-		//UtilityFunctions::print("WallRunning");
+		wallCheckRay->set_target_position(Vector3()); 
 		break;
 	case Falling:
 		//UtilityFunctions::print("Falling");
@@ -894,19 +892,26 @@ void Playables::init()
 	add_child(MaxDashTimer);
 	add_child(ActiveShakeTimer);
 
-	groundCheckRay = memnew(RayCast3D);  
-	add_child(groundCheckRay); 
+	groundCheckRay = memnew(RayCast3D);
+	wallCheckRay = memnew(RayCast3D);
+	add_child(groundCheckRay);
+	add_child(wallCheckRay);
 
 	noise = memnew(FastNoiseLite);
 	noise->set_noise_type(FastNoiseLite::TYPE_PERLIN);
 
-	if(groundCheckRay && CapsuleBody)
+	if(groundCheckRay && CapsuleBody && wallCheckRay)
 	{
 		groundCheckRay->set_target_position(Vector3(0, -CapsuleBody->get_height() / 3, 0)); // 2 units down
 		groundCheckRay->set_enabled(true);
 		groundCheckRay->set_exclude_parent_body(true); // Don't hit self
-		groundCheckRay->set_visible(true); 
+		groundCheckRay->set_visible(false); 
 		defaultHeight = CapsuleBody->get_height(); 
+
+		wallCheckRay->set_enabled(true);
+		wallCheckRay->set_exclude_parent_body(true); // Don't hit self
+		groundCheckRay->set_visible(true);
+
 	}
 	defaultFOV = Cam->get_fov(); 
 	/*if (raycast->is_colliding()) {
@@ -998,16 +1003,16 @@ void Playables::UpdateCapsuleSize()
 		if(IsCrouching())
 		{
 			CapsuleBody->set_height(CrouchHeight);
-			Vector3 pos = CapBody->get_position();
-			pos.y = -CrouchHeight / 2.0f;  // Center the capsule
-			CapBody->set_position(pos);
+			//Vector3 pos = CapBody->get_position();
+			//pos.y = -CrouchHeight / 2.0f;  // Center the capsule
+			set_global_position(get_global_position() + DOWNWARDS * (defaultHeight - CrouchHeight)/2);
 		}
 		else 
 		{
 			CapsuleBody->set_height(defaultHeight);
-			Vector3 pos = CapBody->get_position();
-			pos.y = 0;  // Center the capsule
-			CapBody->set_position(pos);
+			//Vector3 pos = CapBody->get_position();
+			//pos.y = 0;  // Center the capsule
+			set_global_position(get_global_position() + UPWARDS * (CrouchHeight)/2);
 		}
 	}
 }
