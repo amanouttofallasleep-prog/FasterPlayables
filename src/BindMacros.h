@@ -6,6 +6,16 @@
     ClassDB::bind_method(D_METHOD("Set" #m_name, "newVal"), &m_class::Set##m_name); \
     ClassDB::add_property(#m_class, PropertyInfo(m_variant_type, #m_name), "Set" #m_name, "Get" #m_name);
 
+#define BIND_GETSET(m_type, m_name, m_defaultVal) \
+    m_type m_name = m_defaultVal;    \
+    m_type Get##m_name() { return m_name; }     \
+    void Set##m_name(m_type newVal) { m_name = newVal; }    \
+
+#define BIND_GETSET_NIL(m_type, m_name) \
+    m_type m_name;    \
+    m_type Get##m_name() { return m_name; }     \
+    void Set##m_name(m_type newVal) { m_name = newVal; }    \
+
 #define BIND_FUNC(m_class, m_name) \
     ClassDB::bind_method(D_METHOD(#m_name), &m_class::m_name);
 

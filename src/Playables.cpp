@@ -37,6 +37,10 @@ void Playables::_bind_methods()
 	BIND_FUNC(Playables, UpdateCharacterStateBeforeMovement);
 	BIND_FUNC(Playables, UpdateCharacterStateAfterMovement);
 	BIND_SIG(Playables, OBJECT, OnGroundDash);
+	BIND_PROP(Playables, Variant::FLOAT, MaxDashClamp); 
+
+	BIND_PROP(Playables, Variant::NODE_PATH, WallCheckRayPath);
+	BIND_PROP(Playables, Variant::NODE_PATH, GroundCheckRayPath);
 
 	ClassDB::bind_method(D_METHOD("SetMaxWalkSpeed", "speed"), &Playables::SetMaxWalkSpeed);
 	ClassDB::bind_method(D_METHOD("GetMaxWalkSpeed"), &Playables::GetMaxWalkSpeed);
@@ -266,6 +270,7 @@ Playables::Playables()
 	MaxWalkSpeed = 6;
 	MaxRunSpeed = 16; 
 	in = Input::get_singleton();
+
 	//for (int i = 0; i < get_child_count(); i++) //looks for the camera
 	//{
 	//	if (Camera3D* cam = Object::cast_to<Camera3D>(get_child(i)) )
@@ -507,6 +512,7 @@ void Playables::WalkTick(double delta, int iteration)
 		float timeTick = GetSimulationTimeStep(remainingTime, iteration);
 		remainingTime -= timeTick;
 		Vector3 vel = VEL();
+		Vector3 oldNorm = get_floor_normal(); 
 		if (!InputDirection.is_zero_approx() /*&& !(vel.length() >= (IsSprinting() || VELMAG() > MaxRunSpeed ? MaxRunSpeed : MaxWalkSpeed))*/)
 		{
 			vel += RelativeInputDirection.normalized() * timeTick * Acceleration;
@@ -531,7 +537,7 @@ void Playables::WalkTick(double delta, int iteration)
 		set_velocity(vel + DOWNWARDS);
 		move_and_slide();
 
-		if (!is_on_floor())
+		if (ShouldCatchAir(oldNorm, get_floor_normal()) || !is_on_floor())
 		{
 			SetMovementMode(EMovementMode::Falling);
 			StartNewPhysicsBRIDGE(remainingTime, iteration);
@@ -623,11 +629,11 @@ void Playables::SlidingTick(double delta, int iteration)
 		vel.y = VEL().y - (!is_on_floor() ? (SlideGravity * timeTick) : 0);
 
 		Vector3 DirectionLerp = RelativeInputDirection.slide(is_on_floor() ? get_floor_normal() : UPWARDS).normalized() * timeTick * DirectionDrift;		//FVector DirectionLerp = FVector::VectorPlaneProject(Acceleration.GetSafeNormal2D(), CurrentFloor.HitResult.Normal).GetSafeNormal2D() * timetick;
-		//Vector2 horizontal = Vector2(DirectionLerp.x + vel.normalized().x, vel.normalized().z + DirectionLerp.z).normalized();
-		double horizontalSpeed = Vector2(vel.x, vel.z).length();
-		Vector3 normRelInputDir = Vector3(DirectionLerp.x + vel.normalized().x, vel.normalized().y, vel.normalized().z + DirectionLerp.z).normalized() * vel.length();
-		vel = Vector3(normRelInputDir.x, vel.y, normRelInputDir.z); 		//Velocity = (FVector(DirectionLerp.X + Velocity.GetSafeNormal().X, DirectionLerp.Y + Velocity.GetSafeNormal().Y, 0)).GetSafeNormal2D() * Velocity.Size2D() + FVector::UpVector * Velocity.Z;
-
+		Vector3 vel_horizontal_normalized = GetSafeNormal2D(vel);
+		Vector3 blended_direction = Vector3(DirectionLerp.x + vel_horizontal_normalized.x,0,DirectionLerp.z + vel_horizontal_normalized.z);
+		blended_direction = GetSafeNormal2D(blended_direction);
+		double horizontal_speed = Vector2(vel.x, vel.z).length();
+		vel = blended_direction * horizontal_speed + UPWARDS * vel.y;
 
 		Vector3 dir = GetSlideDirection();
 		vel += SlideFloorGravityInfluence * dir.normalized().slide(UPWARDS) * timeTick * dir.length();
@@ -675,25 +681,28 @@ void Playables::WallRunTick(double delta, int iteration)
 		float timeTick = GetSimulationTimeStep(remainingTime, iteration);
 		remainingTime -= timeTick;
 		Vector3 vel = VEL() + (LastWallNormal.dot(get_wall_normal()) > 0.9 ? LastWallNormal : Vector3()) * 9;
-
+		
 		LastWallNormal = get_wall_normal();
 		LastYTouchedWall = get_global_position().y;
 		 
 		if (!InputDirection.is_zero_approx())
 		{
 			Vector3 tempVel = vel + RelativeInputDirection.slide(get_wall_normal()).slide(UPWARDS) * Acceleration * timeTick;
-			if (!(vel.length() > MaxRunSpeed && tempVel.length() > vel.length())) vel = tempVel;
+			if (!(vel.length() > MaxRunSpeed * 2 && tempVel.length() > vel.length())) vel = tempVel;
 		}
 		vel = vel.slide(get_wall_normal()) + DOWNWARDS * WallGravity * timeTick;
 		vel = IsCrouching() ? vel * (1 - timeTick * 3) : vel;
 		//setting up the final movement
-		set_velocity(vel + (9 * -LastWallNormal));
+		set_velocity(vel + (4 * -LastWallNormal * Vector3(1, 0, 1)));
 		move_and_slide();
 
-		//Checking if should be another state
-		if (!is_on_wall() || is_on_floor())
+		//WallCheckRay->set_target_position(-LastWallNormal); 
+		//WallCheckRay->force_raycast_update(); 
+		//UtilityFunctions::print(WallCheckRay->is_colliding() ? "Colliding" : "Not Colliding");
+
+		if (!is_on_wall() || is_on_floor() || LastWallNormal.dot(get_wall_normal()) < .4)
 		{
-			//UtilityFunctions::print("print"); 
+			//UtilityFunctions::print(WallCheckRay->is_colliding() ? "Colliding" : "Not Colliding");
 			SetMovementMode(Falling);
 			StartNewPhysicsBRIDGE(remainingTime, iteration);
 			return;
@@ -748,14 +757,6 @@ void Playables::OnMovementModeChanged(int PreviousMovementModeINT)
 		CoyoteBuffer->stop(); 
 	}
 
-	if (PreviousMovementMode == Falling && is_on_floor())
-	{
-		Vector3 floorprojection = !get_floor_normal().is_equal_approx(UPWARDS) ? Gravity * get_floor_normal().slide(UPWARDS).slide(get_floor_normal()).normalized() : Vector3();
-		currFriction = 0;
-		set_velocity(VEL() + floorprojection);
-		//UtilityFunctions::print(floorprojection.length());	
-	}
-
 	switch (MovementMode)
 	{
 	case Walking:
@@ -765,10 +766,8 @@ void Playables::OnMovementModeChanged(int PreviousMovementModeINT)
 		//UtilityFunctions::print("Sliding");
 		break;
 	case WallRunning:
-		wallCheckRay->set_target_position(Vector3()); 
 		break;
 	case Falling:
-		//UtilityFunctions::print("Falling");
 		break;
 	case None:
 		break;
@@ -795,14 +794,14 @@ void Playables::UpdateCharacterStateBeforeMovement(double deltaSeconds)
 		//UtilityFunctions::print("Walking");
 		SetMovementMode(EMovementMode::Walking);
 	}
-	groundCheckRay->force_raycast_update(); 
-	if (MovementMode != EMovementMode::WallRunning && (is_on_wall_only() && !groundCheckRay->is_colliding()
+	GroundCheckRay->force_raycast_update(); 
+	if (MovementMode != EMovementMode::WallRunning && (is_on_wall_only() && !GroundCheckRay->is_colliding()
 		&& (LastWallNormal != get_wall_normal() || (LastYTouchedWall - LowerAllowedWall) > get_global_position().y)) && !(IsCrouching() && VELMAG() > minSlideVel))
 	{
 		SetMovementMode(EMovementMode::WallRunning);
 	}
 
-	if (MovementMode != Falling && !is_on_floor() && !(IsCrouching() && VELMAG() > minSlideVel) && !(!groundCheckRay->is_colliding() && is_on_wall_only()))
+	if (MovementMode != Falling && !is_on_floor() && !(IsCrouching() && VELMAG() > minSlideVel) && !(!GroundCheckRay->is_colliding() && is_on_wall_only()))
 	{
 		//UtilityFunctions::print("Falling");
 		SetMovementMode(EMovementMode::Falling);
@@ -849,8 +848,22 @@ void Playables::init()
 		CollisionShape3D* collision_shape = get_node<CollisionShape3D>(CapPath);
 		if (collision_shape) {
 			CapsuleBody = Object::cast_to<CapsuleShape3D>(collision_shape->get_shape().ptr());
+			defaultHeight = CapsuleBody->get_height();
 		}
 	}
+	//GroundCheckRayPath
+	//WallCheckRayPath
+
+	if (!GroundCheckRayPath.is_empty()) 
+	{
+		GroundCheckRay = get_node<RayCast3D>(GroundCheckRayPath);
+		GroundCheckRay->set_target_position(Vector3(0, -CapsuleBody->get_height(), 0)); 
+	}
+	if (!WallCheckRayPath.is_empty()) 
+	{
+		WallCheckRay = get_node<RayCast3D>(WallCheckRayPath);
+	}
+
 
 	
 	/*if (Cam == nullptr) {
@@ -892,27 +905,24 @@ void Playables::init()
 	add_child(MaxDashTimer);
 	add_child(ActiveShakeTimer);
 
-	groundCheckRay = memnew(RayCast3D);
+	/*groundCheckRay = memnew(RayCast3D);
 	wallCheckRay = memnew(RayCast3D);
 	add_child(groundCheckRay);
-	add_child(wallCheckRay);
+	add_child(wallCheckRay);*/
 
 	noise = memnew(FastNoiseLite);
 	noise->set_noise_type(FastNoiseLite::TYPE_PERLIN);
 
-	if(groundCheckRay && CapsuleBody && wallCheckRay)
-	{
-		groundCheckRay->set_target_position(Vector3(0, -CapsuleBody->get_height() / 3, 0)); // 2 units down
-		groundCheckRay->set_enabled(true);
-		groundCheckRay->set_exclude_parent_body(true); // Don't hit self
-		groundCheckRay->set_visible(false); 
-		defaultHeight = CapsuleBody->get_height(); 
-
-		wallCheckRay->set_enabled(true);
-		wallCheckRay->set_exclude_parent_body(true); // Don't hit self
-		groundCheckRay->set_visible(true);
-
-	}
+	//if(groundCheckRay && CapsuleBody && wallCheckRay)
+	//{
+	//	groundCheckRay->set_target_position(Vector3(0, -CapsuleBody->get_height() / 3, 0)); // 2 units down
+	//	groundCheckRay->set_enabled(true);
+	//	groundCheckRay->set_exclude_parent_body(true); // Don't hit self
+	//	groundCheckRay->set_visible(true); 
+	//	wallCheckRay->set_enabled(true);
+	//	wallCheckRay->set_exclude_parent_body(true); // Don't hit self
+	//	wallCheckRay->set_visible(true);
+	//}
 	defaultFOV = Cam->get_fov(); 
 	/*if (raycast->is_colliding()) {
 		Vector3 hit_point = raycast->get_collision_point();
@@ -951,31 +961,27 @@ void Playables::SetUpDashTimer(bool isStart)
 
 }
 
+bool Playables::ShouldCatchAir(Vector3 oldNorm, Vector3 newNorm)
+{
+	double oldYVel = std::clamp((double)VEL().slide(oldNorm.normalized()).y, 0.0, VELMAG()); //float oldZVel = FMath::Clamp(FVector::VectorPlaneProject(Velocity, OldFloor.HitResult.Normal).Z, 0.0f, Velocity.Size());
+	double newYVel = std::clamp((double)VEL().slide(newNorm.normalized()).y, 0.0, VELMAG());//float newZVel = FMath::Clamp(FVector::VectorPlaneProject(Velocity, NewFloor.HitResult.Normal).Z, 0.0f, Velocity.Size());
+	bool WillCatchAir = (oldNorm != newNorm) && std::clamp((oldYVel - newYVel), 0., VELMAG()) > 0.1; //bool willCatchAir = (OldFloor.HitResult.Normal != NewFloor.HitResult.Normal) && FMath::Clamp((oldZVel - newZVel), 0.0f, Velocity.Size()) > 10.0f;
+	//default gravity is 980 so if the zcomponent is greater than this than we know that its prolly gonna catch some air cool? 
+	//if(willCatchAir)
+	//GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Green, FString::Printf(TEXT("Catching Air?: %f"), (oldZVel - newZVel)));
+	//GEngine->AddOnScreenDebugMessage(5, 15.0f, FColor::Yellow, TEXT("Catching Air?: %f"));
+	if (WillCatchAir)
+	{
+		set_velocity(VEL().slide(oldNorm).normalized() * VELMAG()); //Velocity.Z = willCatchAir ? oldZVel : 0;
+		//UtilityFunctions::print("CaughtAir"); 
+	}
+	return WillCatchAir;
+}
+
 void Playables::CamUpdate(double delta)
 {
-
-
-	if(isShaking && Cam && noise)
-	{
-		ShakeTime += delta * ShakeSpeed; 
-
-		/*Cam->set_h_offset(noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity); 
-		Cam->set_v_offset(noise->get_noise_2d(0, ShakeTime) * ShakeIntensity);*/
-		Cam->set_position(Vector3(noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity
-			, noise->get_noise_2d(0, ShakeTime) * ShakeIntensity, 0));
-		//UtilityFunctions::print("h: ", noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity, " v: ", noise->get_noise_2d(0, ShakeTime) * ShakeIntensity); 
-		ShakeIntensity = ShakeIntensity > 0 ? ShakeIntensity - delta * ShakeDecay : 0; 
-	}
-	else if(Cam)
-	{
-		/*Cam->set_h_offset(Math::lerp((double)Cam->get_h_offset(), 0, OffsetLerpBackFactor * delta));
-		Cam->set_v_offset(Math::lerp((double)Cam->get_v_offset(), 0, OffsetLerpBackFactor * delta));*/
-
-		Cam->set_position(Vector3(Math::lerp((double)Cam->get_h_offset(), 0, OffsetLerpBackFactor * delta)
-			, Math::lerp((double)Cam->get_v_offset(), 0, OffsetLerpBackFactor * delta), 0)); 
-	}
-
-
+	double Offset = Math::lerp(0., (double)Cam->get_position().y, std::clamp(CrouchBlendTime / CrouchBlendDuration, 0., 1.));
+	//UtilityFunctions::print(CrouchBlendTime);
 	if (MovementMode == WallRunning) 
 	{
 		if (LastWallNormal.dot(GetPlayerRight()) > 0.4) RollTarget = -WallTilt * TORAD;
@@ -987,6 +993,28 @@ void Playables::CamUpdate(double delta)
 		if (RelativeInputDirection.dot(GetPlayerRight()) > 0.6) RollTarget = -WalkTilt * TORAD;
 		else if (RelativeInputDirection.dot(GetPlayerRight()) < -0.6) RollTarget = WalkTilt * TORAD;
 		else RollTarget = 0;
+	}
+
+	CrouchBlendTime = std::clamp(CrouchBlendTime + (IsCrouching() ? delta : -delta), 0., CrouchBlendDuration);	//
+
+	if (isShaking && Cam && noise)
+	{
+		ShakeTime += delta * ShakeSpeed;
+
+		Cam->set_h_offset(noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity);
+		Cam->set_v_offset(noise->get_noise_2d(0, ShakeTime) * ShakeIntensity);
+		Cam->set_position(/*Vector3(noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity
+			, noise->get_noise_2d(0, ShakeTime) * ShakeIntensity, 0) +*/ UPWARDS * Offset);
+		//UtilityFunctions::print("h: ", noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity, " v: ", noise->get_noise_2d(0, ShakeTime) * ShakeIntensity); 
+		ShakeIntensity = ShakeIntensity > 0 ? ShakeIntensity - delta * ShakeDecay : 0;
+	}
+	else if (Cam)
+	{
+		Cam->set_h_offset(Math::lerp((double)Cam->get_h_offset(), 0, OffsetLerpBackFactor * delta));
+		Cam->set_v_offset(Math::lerp((double)Cam->get_v_offset(), 0, OffsetLerpBackFactor * delta));
+
+		Cam->set_position(/*Vector3(Math::lerp((double)Cam->get_h_offset(), 0, OffsetLerpBackFactor * delta)
+			, Math::lerp((double)Cam->get_v_offset(), 0, OffsetLerpBackFactor * delta), 0) +*/ UPWARDS * Offset);
 	}
 
 	CurrentRoll = Math::lerp(CurrentRoll, RollTarget, delta * TiltTimeFactor); 
@@ -1003,17 +1031,16 @@ void Playables::UpdateCapsuleSize()
 		if(IsCrouching())
 		{
 			CapsuleBody->set_height(CrouchHeight);
-			//Vector3 pos = CapBody->get_position();
-			//pos.y = -CrouchHeight / 2.0f;  // Center the capsule
+			Cam->set_position(UPWARDS * ((defaultHeight - CrouchHeight) / 2));
 			set_global_position(get_global_position() + DOWNWARDS * (defaultHeight - CrouchHeight)/2);
 		}
 		else 
 		{
 			CapsuleBody->set_height(defaultHeight);
-			//Vector3 pos = CapBody->get_position();
-			//pos.y = 0;  // Center the capsule
+			Cam->set_position(DOWNWARDS * ((defaultHeight - CrouchHeight) / 2));
 			set_global_position(get_global_position() + UPWARDS * (CrouchHeight)/2);
 		}
+		UtilityFunctions::print(CapsuleBody->get_height()); 
 	}
 }
 
@@ -1100,6 +1127,10 @@ bool Playables::CheckToJump()
 		}
 
 	}
+	// Dash is capped, dash doesn't happen above 15-20ish degrees
+	// You can run up wall you shouldn't be able to, get snagged at top
+	// I want glass
+	// Add back punching even if it has no function
 
 	if (CheckCanDash())//Dash Inputted
 	{
@@ -1154,12 +1185,12 @@ bool Playables::CheckToJump()
 
 void Playables::OnGroundDash()
 {	
-	double power = GetDashPower();
+	double power = std::clamp(GetDashPower(), 0.0, MaxDashClamp);
 	Vector3 Vel = VEL();
 	Vel = IsPlayerFreeDashing()						//checks if pressing w or nothing
 		? getForwardDir() * power					//All true? then just dash where u looking
 		: power * (!InputDirection.is_zero_approx() //: ((FVector::VectorPlaneProject(
-			? RelativeInputDirection.slide(get_floor_normal()) : (-get_global_basis().get_column(2)).slide(get_floor_normal()));
+			? RelativeInputDirection.slide(get_floor_normal()) : (-get_global_basis().get_column(2)).slide(get_floor_normal())).normalized();
 	//UtilityFunctions::print(IsPlayerFreeDashing() ? 0 : !InputDirection.is_zero_approx() ? 1 : 2);
 	//UtilityFunctions::print(power);
 
@@ -1173,7 +1204,7 @@ void Playables::OnWallDash()
 	//float FreeDashStrength = (MaxDashStrength > calcFreeDash) ?/* Safe_MaxDashTimer > 0*/ MaxDashActive ? MaxDashStrength : Velocity.Size() : calcFreeDash;
 	//Velocity = (PlayableOwner->GetControlRotation().Vector() * FreeDashStrength);
 	//float calcFreeDash = JumpPower * (FMath::Clamp(HoldTime, 0, 1.5) + 0.2);
-	float power = GetDashPower();
+	double power = std::clamp(GetDashPower(), 0.0, MaxDashClamp);
 	Vector3 Vel = getForwardDir() * power;
 
 	set_velocity(Vel);

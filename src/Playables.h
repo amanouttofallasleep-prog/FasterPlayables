@@ -76,10 +76,10 @@ namespace godot {
 	protected:
 #pragma region Movement Dynamic Constants
 		//base walk speed
-		double MaxWalkSpeed = 6;
+		double MaxWalkSpeed = 4.55;
 		
 		//base sprint speed
-		double MaxRunSpeed = 16;
+		double MaxRunSpeed = 8;
 		
 		//crouch speed
 		double MaxCrouchSpeed = 3;
@@ -120,7 +120,7 @@ namespace godot {
 		//The power at which you jump AND dash sorry for naming it like this
 		double JumpPower = 15.; 
 
-		//the maximum actual power you are able to jump OR dash again im so if i PMO
+		//the maximum actual power you are able to jump OR dash 
 		Vector2 JumpClamps = Vector2(0.0, 15.0); 
 
 		//The control the player while falling
@@ -152,6 +152,13 @@ namespace godot {
 		
 		//The max speed to get the full fov increase
 		double FOVVelCap = 50; 
+
+		//the maximum actual power you are able to jump OR dash 
+		//double MaxDashClamp = 100/3.6; 
+		BIND_GETSET(double, MaxDashClamp, 100.0 / 3.6);
+
+		double CrouchBlendDuration = .05;
+
 #pragma endregion
 
 #pragma region User Adjustables
@@ -195,8 +202,10 @@ namespace godot {
 		CapsuleShape3D* CapsuleBody; 
 		NodePath CapPath;
 
-		RayCast3D* groundCheckRay;
-		RayCast3D* wallCheckRay;
+		RayCast3D* GroundCheckRay;
+		RayCast3D* WallCheckRay;
+		NodePath WallCheckRayPath;
+		NodePath GroundCheckRayPath;
 
 		Timer* JumpTimer;
 		Timer* DashTimer;
@@ -263,6 +272,8 @@ namespace godot {
 		double currFriction = 0;
 
 		double defaultHeight = 0; 
+
+		double CrouchBlendTime = 0;
 #pragma endregion
 
 #pragma region CameraFeelVars
@@ -372,6 +383,13 @@ namespace godot {
 #pragma endregion
 
 #pragma region Setter-Getters
+		/*RayCast3D* groundCheckRay;
+		RayCast3D* wallCheckRay;*/
+		NodePath GetGroundCheckRayPath() { return GroundCheckRayPath; }
+		void SetGroundCheckRayPath(const NodePath& p_path) { GroundCheckRayPath = p_path; }
+
+		NodePath GetWallCheckRayPath() { return WallCheckRayPath; }
+		void SetWallCheckRayPath(const NodePath& p_path) { WallCheckRayPath = p_path; }
 
 		double GetCrouchHeight() { return CrouchHeight; }
 		void SetCrouchHeight(double newVal) { CrouchHeight = newVal; }
@@ -538,7 +556,7 @@ namespace godot {
 		BIND_BRIDGE_VOID(OnGroundDash);
 		BIND_BRIDGE_VOID(OnWallDash);
 		BIND_BRIDGE_VOID(OnGroundJump);
-		BIND_BRIDGE_VOID(OnWallJump);
+		BIND_BRIDGE_VOID(OnWallJump); 
 		BIND_BRIDGE_VOID(OnJumpDone);
 		BIND_BRIDGE_VOID(OnJumpFailed);
 		BIND_BRIDGE_VOID(OnDashDone);
@@ -606,6 +624,21 @@ namespace godot {
 
 		inline Vector3 GetPlayerFoward() { return -get_global_basis().get_column(2); }
 		inline Vector3 GetPlayerRight() { return get_global_basis().get_column(0); }
+
+		bool ShouldCatchAir(Vector3 oldNorm, Vector3 newNorm); 
+
+		double Size2D(Vector3 val) { return sqrt(val.x * val.x + val.z * val.z);  }
+		Vector3 GetSafeNormal2D(const Vector3& vec) const 
+		{
+			Vector3 horizontal = Vector3(vec.x, 0, vec.z);
+			double len = horizontal.length();
+
+			if (len < 1e-6) {  // Near-zero check
+				return Vector3(0, 0, 0);
+			}
+
+			return horizontal / len;
+		}
 	};
 }
 
