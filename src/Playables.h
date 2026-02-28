@@ -194,24 +194,24 @@ namespace godot {
 
 #pragma endregion
 
-		InputMap* inMap; 
-		Input* in;
+		InputMap* inMap= nullptr; 
+		Input* in= nullptr;
 		NodePath CamPath;
-		Camera3D* Cam; 
-		CollisionShape3D* CapBody; 
-		CapsuleShape3D* CapsuleBody; 
+		Camera3D* Cam= nullptr; 
+		CollisionShape3D* CapBody= nullptr; 
+		CapsuleShape3D* CapsuleBody= nullptr; 
 		NodePath CapPath;
 
-		RayCast3D* GroundCheckRay;
-		RayCast3D* WallCheckRay;
+		RayCast3D* GroundCheckRay = nullptr;
+		RayCast3D* WallCheckRay = nullptr;
 		NodePath WallCheckRayPath;
 		NodePath GroundCheckRayPath;
 
-		Timer* JumpTimer;
-		Timer* DashTimer;
-		Timer* InputBuffer;
-		Timer* CoyoteBuffer;
-		Timer* MaxDashTimer;
+		Timer* JumpTimer = nullptr;
+		Timer* DashTimer = nullptr;
+		Timer* InputBuffer = nullptr;
+		Timer* CoyoteBuffer = nullptr;
+		Timer* MaxDashTimer = nullptr;
 
 		static void _bind_methods();
 

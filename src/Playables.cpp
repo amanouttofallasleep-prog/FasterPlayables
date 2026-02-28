@@ -270,7 +270,7 @@ Playables::Playables()
 	MaxWalkSpeed = 6;
 	MaxRunSpeed = 16; 
 	in = Input::get_singleton();
-
+	LastWallNormal = Vector3();
 	//for (int i = 0; i < get_child_count(); i++) //looks for the camera
 	//{
 	//	if (Camera3D* cam = Object::cast_to<Camera3D>(get_child(i)) )
