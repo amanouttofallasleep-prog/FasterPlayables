@@ -634,7 +634,7 @@ namespace godot {
 			double len = horizontal.length();
 
 			if (len < 1e-6) {  // Near-zero check
-				return Vector3(0, 0, 0);
+				return Vector3(0, 0, 0).normalized();
 			}
 
 			return horizontal / len;
