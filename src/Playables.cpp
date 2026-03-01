@@ -628,13 +628,16 @@ void Playables::SlidingTick(double delta, int iteration)
 		//FindFloor(UpdatedComponent->GetComponentLocation(), CurrentFloor, true, NULL);
 		vel.y = VEL().y - (!is_on_floor() ? (SlideGravity * timeTick) : 0);
 
-		Vector3 DirectionLerp = RelativeInputDirection.slide(is_on_floor() ? get_floor_normal() : UPWARDS).normalized() * timeTick * DirectionDrift;		//FVector DirectionLerp = FVector::VectorPlaneProject(Acceleration.GetSafeNormal2D(), CurrentFloor.HitResult.Normal).GetSafeNormal2D() * timetick;
-		Vector3 vel_horizontal_normalized = GetSafeNormal2D(vel);
-		Vector3 blended_direction = Vector3(DirectionLerp.x + vel_horizontal_normalized.x,0,DirectionLerp.z + vel_horizontal_normalized.z);
-		blended_direction = GetSafeNormal2D(blended_direction);
-		double horizontal_speed = Vector2(vel.x, vel.z).length();
-		vel = blended_direction * horizontal_speed + UPWARDS * vel.y;
+		/*FVector DirectionLerp = FVector::VectorPlaneProject(Acceleration.GetSafeNormal2D(), CurrentFloor.HitResult.Normal).GetSafeNormal2D() * timetick;
+		Velocity = (FVector(DirectionLerp.X + Velocity.GetSafeNormal().X, DirectionLerp.Y + Velocity.GetSafeNormal().Y, 0)).GetSafeNormal2D() * Velocity.Size2D() + FVector::UpVector * Velocity.Z;*/
 
+		if (!InputDirection.is_zero_approx())
+		{
+			vel += Size2D(vel) < MaxRunSpeed ? (RelativeInputDirection.normalized() * timeTick * DirectionDrift * (MaxRunSpeed)) : Vector3(0,0,0);
+			
+			Vector3 DirectionLerp = GetSafeNormal2D(RelativeInputDirection.slide(is_on_floor() ? get_floor_normal() : UPWARDS)) * timeTick;
+			vel = GetSafeNormal2D(Vector3(DirectionLerp.x + vel.normalized().x, 0, DirectionLerp.z + vel.normalized().z)) * Size2D(vel) + UPWARDS * vel.y;
+		}
 		Vector3 dir = GetSlideDirection();
 		vel += SlideFloorGravityInfluence * dir.normalized().slide(UPWARDS) * timeTick * dir.length();
 
