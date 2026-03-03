@@ -604,40 +604,21 @@ void Playables::SlidingTick(double delta, int iteration)
 			currFriction = 0;
 			set_velocity(get_velocity() + floorprojection);
 		}
-		//FFindFloorResult buff;
-		//FHitResult rayCheck;
-		//GetWorld()->LineTraceSingleByChannel(rayCheck, UpdatedComponent->GetComponentLocation(), UpdatedComponent->GetComponentLocation() + Velocity * timeTick, ECC_WorldStatic, WallRunParamsQ, WallRunParamsR);
-		//FVector dir = GetSlideDirection();
-		//Velocity += ((Slide_GravityInfluence * FVector::VectorPlaneProject(dir.GetSafeNormal(), CurrentFloor.HitResult.Normal) * timeTick) * dir.Size());
-		////FHitResult Hit; 
-		////because the slide is now looking ahead if there's a wall blocking hit is gonna be true so we gon just not have gravity
-
-		//FindFloor(rayCheck.bBlockingHit ? rayCheck.ImpactPoint : UpdatedComponent->GetComponentLocation() + Velocity * timeTick, buff, true, NULL);
-		//BufferSlideClampTime = abs(buff.HitResult.Normal | FVector::UpVector) > 0.2 ? 0 : 0.3;
-		//if (CanSlideDirection)
-		//	DriftSlide(timeTick);
-
-		//if (buff.FloorDist > 1.0f || abs(buff.HitResult.Normal | FVector::UpVector) <= 0.3f)
-		//	Velocity += (Slide_Gravity * FVector::DownVector * timeTick);
-		//else if (BufferSlideClampTime <= 0)
-		//	SlideAcrossFloor(timeTick, buff);
-
-		////does stuff with audio here inside the while? tf? 
-		////UAkGameplayStatics::SetRTPCValue(SlideRTPC, (abs(buff.HitResult.Normal | FVector::UpVector) <= 0.3f) ? 0.0f : 1.0f, 0, CharacterOwner, "None");
-		////UAkGameplayStatics::SetRTPCValue(SlideRTPC, Acceleration.Size(), 0, CharacterOwner, "None");
-		//FindFloor(UpdatedComponent->GetComponentLocation(), CurrentFloor, true, NULL);
-		vel.y = VEL().y - (!is_on_floor() ? (SlideGravity * timeTick) : 0);
 
 		/*FVector DirectionLerp = FVector::VectorPlaneProject(Acceleration.GetSafeNormal2D(), CurrentFloor.HitResult.Normal).GetSafeNormal2D() * timetick;
 		Velocity = (FVector(DirectionLerp.X + Velocity.GetSafeNormal().X, DirectionLerp.Y + Velocity.GetSafeNormal().Y, 0)).GetSafeNormal2D() * Velocity.Size2D() + FVector::UpVector * Velocity.Z;*/
 
 		if (!InputDirection.is_zero_approx())
 		{
-			vel += Size2D(vel) < MaxRunSpeed ? (RelativeInputDirection.normalized() * timeTick * DirectionDrift * (MaxRunSpeed)) : Vector3(0,0,0);
-			
-			Vector3 DirectionLerp = GetSafeNormal2D(RelativeInputDirection.slide(is_on_floor() ? get_floor_normal() : UPWARDS)) * timeTick;
-			vel = GetSafeNormal2D(Vector3(DirectionLerp.x + vel.normalized().x, 0, DirectionLerp.z + vel.normalized().z)) * Size2D(vel) + UPWARDS * vel.y;
+			Vector3 inDir = (RelativeInputDirection.normalized() * timeTick * DirectionDrift * (MaxRunSpeed)); 
+			vel += Size2D(vel) < MaxRunSpeed || (vel + inDir).length() < vel.length() ? inDir : Vector3(0, 0, 0);
+			Vector3 DirectionLerp = GetSafeNormal2D(RelativeInputDirection.slide(is_on_floor() ? get_floor_normal() : UPWARDS)) * timeTick * DirectionDrift;
+			vel = (Vector3(DirectionLerp.x + vel.normalized().x, vel.normalized().y, DirectionLerp.z + vel.normalized().z)).normalized() * vel.length();
 		}
+
+		vel.y = VEL().y - (!is_on_floor() ? (SlideGravity * timeTick) : 0);
+
+
 		Vector3 dir = GetSlideDirection();
 		vel += SlideFloorGravityInfluence * dir.normalized().slide(UPWARDS) * timeTick * dir.length();
 
@@ -647,16 +628,6 @@ void Playables::SlidingTick(double delta, int iteration)
 			currFriction = 0;
 			set_velocity(get_velocity() + floorprojection);
 		}
-
-		//DriftSlide()
-		//FVector bounceDirection = Velocity.MirrorByVector(Hit.Normal);	//Negate the velocity mirrored by the hit normal
-		//Velocity = bounceDirection;
-
-		//float dot = (Hit.Normal | Hit.GetComponent()->GetComponentVelocity().GetSafeNormal());
-		//Velocity += Hit.GetComponent()->GetComponentVelocity().Size() * dot * Hit.Normal;
-
-		//float volume = FMath::Clamp(Velocity.Size() / 1500.0f, 0.2f, 1.0f);
-		//UGameplayStatics::PlaySound2D(this, PlayableOwner->BounceSound, volume, FMath::RandRange(0.8f, 1.5f));
 
 		//setting up the final movement
 		//note: downwards needs to be here reguardless of if there's gravity or not 
