@@ -45,18 +45,18 @@ enum EMovementMode
 using namespace godot;
 
 // MAGIC NUMBERS
-const double MAX_STEP_SIDE_Z = 0.08f;	// maximum z value for the normal on the vertical side of steps
-const double SWIMBOBSPEED = -80.f;
-const double VERTICAL_SLOPE_NORMAL_Z = 0.001f; // Slope is vertical if Abs(Normal.Z) <= this threshold. Accounts for precision problems that sometimes angle normals slightly off horizontal for vertical surface.
+const float MAX_STEP_SIDE_Z = 0.08f;	// maximum z value for the normal on the vertical side of steps
+const float SWIMBOBSPEED = -80.f;
+const float VERTICAL_SLOPE_NORMAL_Z = 0.001f; // Slope is vertical if Abs(Normal.Z) <= this threshold. Accounts for precision problems that sometimes angle normals slightly off horizontal for vertical surface.
 
-const double MIN_TICK_TIME = 1e-6f;
-const double MIN_FLOOR_DIST = 1.9f;
-const double MAX_FLOOR_DIST = 2.4f;
-const double BRAKE_TO_STOP_VELOCITY = 10.f;
-const double SWEEP_EDGE_REJECT_DISTANCE = 0.15f;
+const float MIN_TICK_TIME = 1e-6f;
+const float MIN_FLOOR_DIST = 1.9f;
+const float MAX_FLOOR_DIST = 2.4f;
+const float BRAKE_TO_STOP_VELOCITY = 10.f;
+const float SWEEP_EDGE_REJECT_DISTANCE = 0.15f;
 //MAX TIME for a step allowed 
 //causes a slowdown for frame times greater than this
-const double MAXTIMESTEP = 0.05; // 20 fps
+const float MAXTIMESTEP = 0.05; // 20 fps
 
 //Cartesian Cardinal upward axis
 const Vector3 UPWARDS = Vector3(0, 1, 0);
@@ -65,7 +65,7 @@ const Vector3 UPWARDS = Vector3(0, 1, 0);
 const Vector3  DOWNWARDS = Vector3(0, -1, 0);
 
 //Multiply this to any would be degree to transfer to radians
-const double TORAD = (Math_PI / 180.0); 
+const float TORAD = (Math_PI / 180.0); 
 
 //the absolute maximum allowed iterations before basically saying fuck it just leave
 const int MAXITER = 25;
@@ -76,88 +76,88 @@ namespace godot {
 	protected:
 #pragma region Movement Dynamic Constants
 		//base walk speed
-		double MaxWalkSpeed = 4.55;
+		float MaxWalkSpeed = 4.55;
 		
 		//base sprint speed
-		double MaxRunSpeed = 8;
+		float MaxRunSpeed = 8;
 		
 		//crouch speed
-		double MaxCrouchSpeed = 3;
+		float MaxCrouchSpeed = 3;
 		
 		//The height player assumes while crouching
-		double CrouchHeight = 0.5; 
+		float CrouchHeight = 0.5; 
 		
 		//falling downwards force
-		double Gravity = 9.8;
+		float Gravity = 9.8;
 		
 		//sliding falling downwawrds force
-		double SlideGravity = 16.8; 
+		float SlideGravity = 16.8; 
 		
 		//wallrunning falling downwards force
-		double WallGravity = 4.9;
+		float WallGravity = 4.9;
 		
 		//the influence of gravity on a slope while sliding
-		double SlideFloorGravityInfluence = 1000; 
+		float SlideFloorGravityInfluence = 1000; 
 
 		//breaking factor durring walking
-		double Deceleration = 12.;
+		float Deceleration = 12.;
 		
 		//the friction while sliding and touching the floor
-		double SlideFriction = 0.17;
+		float SlideFriction = 0.17;
 		
 		//the friction whlie walking
-		double WalkFriction = 2; 
+		float WalkFriction = 2; 
 		
 		//the kind of "pull" factor for your direction keys (wasd)
-		double DirectionDrift = 2; 
+		float DirectionDrift = 2; 
 
 		//acceleration factor durring walking
-		double Acceleration = 20.;
+		float Acceleration = 20.;
 
 		//the minimum value to slide
-		double minSlideVel = 7.;
+		float minSlideVel = 7.;
 
 		//The power at which you jump AND dash sorry for naming it like this
-		double JumpPower = 15.; 
+		float JumpPower = 15.; 
 
 		//the maximum actual power you are able to jump OR dash 
 		Vector2 JumpClamps = Vector2(0.0, 15.0); 
 
 		//The control the player while falling
-		double AirControlFactor = 0.5;
+		float AirControlFactor = 0.5;
 
 		//The time that you have with max dash active
-		double MaxDashTime = 0.3;
+		float MaxDashTime = 0.3;
 
 		//The height at which you can wallrun note: tf? 7 meters? 
-		double LowerAllowedWall = 7; 
+		float LowerAllowedWall = 7; 
 
 		//how long landing shakes the player by default
-		double LandShakeTime = .08; 
+		float LandShakeTime = .08; 
 		
 		//default landing shake intensity
-		double LandShakeIntensity = 0.03;
+		float LandShakeIntensity = 0.03;
 		
 		//default jump/dash shake time
-		double ChargeActionShakeTime = .05; 
+		float ChargeActionShakeTime = .05; 
 		
 		//default jump/dash shake intensity
-		double ChargeActionShakeIntensity = .04; 
+		float ChargeActionShakeIntensity = .04; 
 
 		//Shake Speed at which you navigate the noise texture
-		double ShakeSpeed = 2;
+		float ShakeSpeed = 2;
 
 		//The rate at which the shake intensity goes down
-		double ShakeDecay = 1;
+		float ShakeDecay = 1;
 		
 		//The max speed to get the full fov increase
-		double FOVVelCap = 50; 
+		float FOVVelCap = 50; 
 
 		//the maximum actual power you are able to jump OR dash 
-		//double MaxDashClamp = 100/3.6; 
-		BIND_GETSET(double, MaxDashClamp, 100.0 / 3.6);
+		//float MaxDashClamp = 100/3.6; 
+		BIND_GETSET(float, MaxDashClamp, 100.0 / 3.6);
 
-		double CrouchBlendDuration = .05;
+		float CrouchBlendDuration = .05;
 
 #pragma endregion
 
@@ -167,30 +167,30 @@ namespace godot {
 		//Some user settings will change game mecahnics based on the value you've implemented.
 
 		//Accessibility You can change how much tilt is applied to the camera while on the wall
-		double WallTilt = 15.0;
+		float WallTilt = 15.0;
 
 		//Accessibility You can change how much tilt is applied to the camera while walking sideways
-		double WalkTilt = 2.5;
+		float WalkTilt = 2.5;
 
 		//Change how long your inputs are "out" decreasing this will increase precision however lowers grace
-		double BufferTime = 0.3;
+		float BufferTime = 0.3;
 
 		//Change how long coyote time is out, decreasing this will increase precision however lowers grace
-		double CoyoteTime = 0.3;
+		float CoyoteTime = 0.3;
 
 		//the rate at which you charge your jump decreasing this from 0.1 will change the mechanic
 		//above or equal to 0.1 your charge will be held at max when it reaches max
 		//lower your charge will not be held and you'll have a "misfire" which greatly screws up your input and actually makes you "trip"
-		double ChargeIncrements = 0.1;
+		float ChargeIncrements = 0.1;
 
 		//How fast you want the camera to tilt on a wall or while walking
-		double TiltTimeFactor = 5; 
+		float TiltTimeFactor = 5; 
 
 		//how much bobbing you want changes the amplitude of the bobbing
-		double BobbingFactor = 1; 
+		float BobbingFactor = 1; 
 
 		//how much going fast will increase fov
-		double maxFOVIncrease = 15;
+		float maxFOVIncrease = 15;
 
 #pragma endregion
 
@@ -267,21 +267,21 @@ namespace godot {
 		bool CanCoyoteTimeJump = false;
 		bool MaxDashActive = false;
 		bool PrevFloor = false;
-		double MaxDashStrength = 0;
+		float MaxDashStrength = 0;
 
-		double currFriction = 0;
+		float currFriction = 0;
 
-		double defaultHeight = 0; 
+		float defaultHeight = 0; 
 
-		double CrouchBlendTime = 0;
+		float CrouchBlendTime = 0;
 #pragma endregion
 
 #pragma region CameraFeelVars
 		//The Roll we wanna go to
-		double RollTarget = 0;
+		float RollTarget = 0;
 
 		//The Current roll
-		double CurrentRoll = 0;
+		float CurrentRoll = 0;
 
 		//Distance away from Location(0,0,0) keep in mind this is local offset from the parent
 		Vector2 CurrentOffset = Vector2();
@@ -291,18 +291,18 @@ namespace godot {
 		//	https://www.youtube.com/watch?v=pG4KGyxQp40 Quality Screen Shake in Godot 4.4 | Game Juice 
 		// modifying a little bit
 
-		double ShakeIntensity = 0;
+		float ShakeIntensity = 0;
 		Timer* ActiveShakeTimer;
 		bool isShaking = false; 
-		double ShakeTime = 0;
+		float ShakeTime = 0;
 		//cool didn't know this was a thing
 		FastNoiseLite* noise;
 
 		//The Camera lwerp 
-		double OffsetLerpBackFactor = 10.5; 
+		float OffsetLerpBackFactor = 10.5; 
 
 		//
-		double defaultFOV = 90;
+		float defaultFOV = 90;
 
 		//not sure if i really want head bobbing yet
 			////based of unreal engine
@@ -350,32 +350,32 @@ namespace godot {
 		*/
 
 		//helper functions	
-		double GetSimulationTimeStep(double remainder, int iteration);
+		float GetSimulationTimeStep(float remainder, int iteration);
 
-		void PhysTick(double delta, int iteration);   
-		void WalkTick(double delta, int iteration); 
+		void PhysTick(float delta, int iteration);   
+		void WalkTick(float delta, int iteration); 
 
-		void SlidingTick(double delta, int iteration);
+		void SlidingTick(float delta, int iteration);
 		Vector3 GetSlideDirection(); 
 
-		void FallingTick(double delta, int iteration); 
+		void FallingTick(float delta, int iteration); 
 
-		void WallRunTick(double delta, int iteration); 
+		void WallRunTick(float delta, int iteration); 
 
-		BIND_BRIDGE_VOID_2( StartNewPhysics, double, deltatime, int, Iteration); 
-		//void StartNewPhysics(double deltaTime, int Iterations);
+		BIND_BRIDGE_VOID_2( StartNewPhysics, float, deltatime, int, Iteration); 
+		//void StartNewPhysics(float deltaTime, int Iterations);
 		//void OnMovementModeChanged(EMovementMode PreviousMovementMode);
 		BIND_BRIDGE_VOID_1( OnMovementModeChanged, int, PreviousMovementModeINT);
 
-	//	void OnMovementUpdated(double DeltaSeconds, const Vector3& OldLocation, const Vector3& OldVelocity);
+	//	void OnMovementUpdated(float DeltaSeconds, const Vector3& OldLocation, const Vector3& OldVelocity);
 	//	BIND_BRIDGE_3(void, OnMovementModeChanged, EMovementMode, PreviousMovementMode);
 
 
-		//void UpdateCharacterStateBeforeMovement(double deltaSeconds); //this sets the state of the player 
-		BIND_BRIDGE_VOID_1( UpdateCharacterStateBeforeMovement, double, deltaSeconds);
+		//void UpdateCharacterStateBeforeMovement(float deltaSeconds); //this sets the state of the player 
+		BIND_BRIDGE_VOID_1( UpdateCharacterStateBeforeMovement, float, deltaSeconds);
 
-		//void UpdateCharacterStateAfterMovement(double deltaSeconds); //this sets the state of the player 
-		BIND_BRIDGE_VOID_1( UpdateCharacterStateAfterMovement, double, deltaSeconds);
+		//void UpdateCharacterStateAfterMovement(float deltaSeconds); //this sets the state of the player 
+		BIND_BRIDGE_VOID_1( UpdateCharacterStateAfterMovement, float, deltaSeconds);
 
 		//enter and exit physics functions
 		void ExitWallRun(); 
@@ -391,89 +391,89 @@ namespace godot {
 		NodePath GetWallCheckRayPath() { return WallCheckRayPath; }
 		void SetWallCheckRayPath(const NodePath& p_path) { WallCheckRayPath = p_path; }
 
-		double GetCrouchHeight() { return CrouchHeight; }
-		void SetCrouchHeight(double newVal) { CrouchHeight = newVal; }
+		float GetCrouchHeight() { return CrouchHeight; }
+		void SetCrouchHeight(float newVal) { CrouchHeight = newVal; }
 
-		double GetSlideGravity() { return SlideGravity; }
-		void SetSlideGravity(double newVal) { SlideGravity = newVal; }
+		float GetSlideGravity() { return SlideGravity; }
+		void SetSlideGravity(float newVal) { SlideGravity = newVal; }
 
-		double GetWallGravity() { return WallGravity;  }
-		void SetWallGravity(double newVal) { WallGravity = newVal; }
+		float GetWallGravity() { return WallGravity;  }
+		void SetWallGravity(float newVal) { WallGravity = newVal; }
 
-		double GetSlideFloorGravityInfluence() { return SlideFloorGravityInfluence; }
-		void SetSlideFloorGravityInfluence(double newVal) { SlideFloorGravityInfluence = newVal; }
+		float GetSlideFloorGravityInfluence() { return SlideFloorGravityInfluence; }
+		void SetSlideFloorGravityInfluence(float newVal) { SlideFloorGravityInfluence = newVal; }
 
-		double GetSlideFriction() { return SlideFriction; }
-		void SetSlideFriction(double newVal) { SlideFriction = newVal; }
+		float GetSlideFriction() { return SlideFriction; }
+		void SetSlideFriction(float newVal) { SlideFriction = newVal; }
 
-		double GetWalkFriction() { return SlideFriction; }
-		void SetWalkFriction(double newVal) { WalkFriction = newVal; }
+		float GetWalkFriction() { return SlideFriction; }
+		void SetWalkFriction(float newVal) { WalkFriction = newVal; }
 
-		double GetDirectionDrift() { return DirectionDrift; }
-		void SetDirectionDrift(double newVal) { DirectionDrift = newVal; }
+		float GetDirectionDrift() { return DirectionDrift; }
+		void SetDirectionDrift(float newVal) { DirectionDrift = newVal; }
 
-		double GetMinSlideVel() { return minSlideVel; }
-		void SetMinSlideVel(double newVal) { minSlideVel = newVal; }
+		float GetMinSlideVel() { return minSlideVel; }
+		void SetMinSlideVel(float newVal) { minSlideVel = newVal; }
 
-		double GetJumpPower() { return JumpPower; }
-		void SetJumpPower(double newVal) { JumpPower = newVal; }
+		float GetJumpPower() { return JumpPower; }
+		void SetJumpPower(float newVal) { JumpPower = newVal; }
 
 		Vector2 GetJumpClamps() { return JumpClamps; }
 		void SetJumpClamps(Vector2 newVal) { JumpClamps = newVal; }
 
-		double GetAirControlFactor() { return AirControlFactor; }
-		void SetAirControlFactor(double newVal) { AirControlFactor = newVal; }
+		float GetAirControlFactor() { return AirControlFactor; }
+		void SetAirControlFactor(float newVal) { AirControlFactor = newVal; }
 
-		double GetMaxDashTime() { return MaxDashTime; }
-		void SetMaxDashTime(double newVal) { MaxDashTime = newVal; }
+		float GetMaxDashTime() { return MaxDashTime; }
+		void SetMaxDashTime(float newVal) { MaxDashTime = newVal; }
 
-		double GetLowerAllowedWall() { return LowerAllowedWall; }
-		void SetLowerAllowedWall(double newVal) { LowerAllowedWall = newVal; }
+		float GetLowerAllowedWall() { return LowerAllowedWall; }
+		void SetLowerAllowedWall(float newVal) { LowerAllowedWall = newVal; }
 
-		double GetLandShakeTime() { return LandShakeTime; }
-		void SetLandShakeTime(double newVal) { LandShakeTime = newVal; }
+		float GetLandShakeTime() { return LandShakeTime; }
+		void SetLandShakeTime(float newVal) { LandShakeTime = newVal; }
 
-		double GetLandShakeIntensity() { return LandShakeIntensity; }
-		void SetLandShakeIntensity(double newVal) { LandShakeIntensity = newVal; }
+		float GetLandShakeIntensity() { return LandShakeIntensity; }
+		void SetLandShakeIntensity(float newVal) { LandShakeIntensity = newVal; }
 
-		double GetChargeActionShakeTime() { return ChargeActionShakeTime; }
-		void SetChargeActionShakeTime(double newVal) { ChargeActionShakeTime = newVal; }
+		float GetChargeActionShakeTime() { return ChargeActionShakeTime; }
+		void SetChargeActionShakeTime(float newVal) { ChargeActionShakeTime = newVal; }
 
-		double GetChargeActionShakeIntensity() { return ChargeActionShakeIntensity; }
-		void SetChargeActionShakeIntensity(double newVal) { ChargeActionShakeIntensity = newVal; }
+		float GetChargeActionShakeIntensity() { return ChargeActionShakeIntensity; }
+		void SetChargeActionShakeIntensity(float newVal) { ChargeActionShakeIntensity = newVal; }
 
-		double GetShakeSpeed() { return ShakeSpeed; }
-		void SetShakeSpeed(double newVal) { ShakeSpeed = newVal; }
+		float GetShakeSpeed() { return ShakeSpeed; }
+		void SetShakeSpeed(float newVal) { ShakeSpeed = newVal; }
 
-		double GetShakeDecay() { return ShakeDecay; }
-		void SetShakeDecay(double newVal) { ShakeDecay = newVal; }
+		float GetShakeDecay() { return ShakeDecay; }
+		void SetShakeDecay(float newVal) { ShakeDecay = newVal; }
 
-		double GetFOVVelCap() { return FOVVelCap; }
-		void SetFOVVelCap(double newVal) { FOVVelCap = newVal; }
+		float GetFOVVelCap() { return FOVVelCap; }
+		void SetFOVVelCap(float newVal) { FOVVelCap = newVal; }
 
-		double GetWallTilt() { return WallTilt; }
-		void SetWallTilt(double newVal) { WallTilt = newVal; }
+		float GetWallTilt() { return WallTilt; }
+		void SetWallTilt(float newVal) { WallTilt = newVal; }
 
-		double GetWalkTilt() { return WalkTilt; }
-		void SetWalkTilt(double newVal) { WalkTilt = newVal; }
+		float GetWalkTilt() { return WalkTilt; }
+		void SetWalkTilt(float newVal) { WalkTilt = newVal; }
 
-		double GetCoyoteTime() { return CoyoteTime; }
-		void SetCoyoteTime(double newVal) { CoyoteTime = newVal; }
+		float GetCoyoteTime() { return CoyoteTime; }
+		void SetCoyoteTime(float newVal) { CoyoteTime = newVal; }
 
-		double GetChargeIncrements() { return ChargeIncrements; }
-		void SetChargeIncrements(double newVal) { ChargeIncrements = newVal; }
+		float GetChargeIncrements() { return ChargeIncrements; }
+		void SetChargeIncrements(float newVal) { ChargeIncrements = newVal; }
 
-		double GetTiltTimeFactor() { return TiltTimeFactor; }
-		void SetTiltTimeFactor(double newVal) { TiltTimeFactor = newVal; }
+		float GetTiltTimeFactor() { return TiltTimeFactor; }
+		void SetTiltTimeFactor(float newVal) { TiltTimeFactor = newVal; }
 
-		double GetBobbingFactor() { return BobbingFactor; }
-		void SetBobbingFactor(double newVal) { BobbingFactor = newVal; }
+		float GetBobbingFactor() { return BobbingFactor; }
+		void SetBobbingFactor(float newVal) { BobbingFactor = newVal; }
 
-		double GetMaxFOVIncrease() { return maxFOVIncrease; }
-		void SetMaxFOVIncrease(double newVal) { maxFOVIncrease = newVal; }
+		float GetMaxFOVIncrease() { return maxFOVIncrease; }
+		void SetMaxFOVIncrease(float newVal) { maxFOVIncrease = newVal; }
 
-		double GetBufferTime() { return BufferTime; }
-		void SetBufferTime(double newVal) { BufferTime = newVal; }
+		float GetBufferTime() { return BufferTime; }
+		void SetBufferTime(float newVal) { BufferTime = newVal; }
 
 		void SetCrouchFlag(bool newVal) {
 			InputFlags = newVal ? InputFlags | CFLAG : InputFlags >> CFLAG << CFLAG;
@@ -497,29 +497,29 @@ namespace godot {
 		bool WasSprinting() { return (PrevInputFlags & SFLAG) != 0; }
 
 		////////////////////////////////////////////////////////////////////////////////////////
-		void SetGravity(double newVal) { Gravity = newVal; }
-		double GetGravity() { return Gravity; } 
+		void SetGravity(float newVal) { Gravity = newVal; }
+		float GetGravity() { return Gravity; } 
 
 		void SetCoyoteTimeActive(bool newVal) { CoyoteTimeActive = newVal; }
 		bool GetCoyoteTimeActive() { return CoyoteTimeActive; }
 
-		void SetDeceleration(double newVal) { Deceleration = newVal; }
-		double GetDeceleration() { return Deceleration; }
+		void SetDeceleration(float newVal) { Deceleration = newVal; }
+		float GetDeceleration() { return Deceleration; }
 
-		void SetAcceleration(double newVal) { Acceleration = newVal; }
-		double GetAcceleration() { return Acceleration; }
+		void SetAcceleration(float newVal) { Acceleration = newVal; }
+		float GetAcceleration() { return Acceleration; }
 
 		void SetInputDirection(Vector2 inDirection) { InputDirection = inDirection; }
 		Vector2 GetInputDirection() { return InputDirection; }
 
-		void SetMaxWalkSpeed(double speed) { MaxWalkSpeed = speed; };
-		double GetMaxWalkSpeed() const { return MaxWalkSpeed;  }
+		void SetMaxWalkSpeed(float speed) { MaxWalkSpeed = speed; };
+		float GetMaxWalkSpeed() const { return MaxWalkSpeed;  }
 
-		void SetMaxRunSpeed(double speed) { MaxRunSpeed = speed; }
-		double GetMaxRunSpeed() const { return MaxRunSpeed; }
+		void SetMaxRunSpeed(float speed) { MaxRunSpeed = speed; }
+		float GetMaxRunSpeed() const { return MaxRunSpeed; }
 
-		void SetMaxCrouchSpeed(double speed) { MaxCrouchSpeed = speed; }
-		double GetMaxCrouchSpeed() const { return MaxCrouchSpeed; }
+		void SetMaxCrouchSpeed(float speed) { MaxCrouchSpeed = speed; }
+		float GetMaxCrouchSpeed() const { return MaxCrouchSpeed; }
 
 		Camera3D* GetCam() const { return Cam; }
 		void SetCam(Camera3D* new_Cam) { Cam = new_Cam; }
@@ -539,7 +539,7 @@ namespace godot {
 		NodePath GetCapPath() { return CapPath; }
 		void SetCapPath(const NodePath& p_path) { CapPath = p_path; }
 
-		inline double VELMAG() const { return get_velocity().length(); }
+		inline float VELMAG() const { return get_velocity().length(); }
 		inline Vector3 VEL() const { return get_velocity(); }
 		void UpdateCapsuleSize();
 
@@ -573,8 +573,8 @@ namespace godot {
 		//virtual bool CheckCanClamber() { return VELMAG() <= MaxRunSpeed && (!IsJumping() && WasJumping()); }
 		//void AbleToClamber();
 
-		//BIND_BRIDGE(double, GetDashPower); 
-		double GetDashPower();
+		//BIND_BRIDGE(float, GetDashPower); 
+		float GetDashPower();
 		//BIND_BRIDGE(bool, IsPlayerFreeDashing);
 		bool IsPlayerFreeDashing(); 
 		//BIND_BRIDGE(Vector3, getForwardDir);
@@ -598,7 +598,7 @@ namespace godot {
 			isShaking = false; 
 		}
 
-		void ScreenShake(double intensity, double time)
+		void ScreenShake(float intensity, float time)
 		{
 			if (noise) {
 				noise->set_seed(rand()); 
@@ -619,19 +619,19 @@ namespace godot {
 		Vector3 GetMirroredVector(Vector3 a, Vector3 b) { return a - b * (2.f * (a.dot(b))); }
 
 		bool IsPlayerSlidingUphill() { return MovementMode == Sliding && (GetSlideDirection().normalized().slide(get_floor_normal()).dot(VEL()) < 0.0); }
-		BIND_BRIDGE_VOID_1(CamUpdate, double, delta);
-		//void CamUpdate(double delta); 
+		BIND_BRIDGE_VOID_1(CamUpdate, float, delta);
+		//void CamUpdate(float delta); 
 
 		inline Vector3 GetPlayerFoward() { return -get_global_basis().get_column(2); }
 		inline Vector3 GetPlayerRight() { return get_global_basis().get_column(0); }
 
 		bool ShouldCatchAir(Vector3 oldNorm, Vector3 newNorm); 
 
-		double Size2D(Vector3 val) { return sqrt(val.x * val.x + val.z * val.z);  }
+		float Size2D(Vector3 val) { return sqrt(val.x * val.x + val.z * val.z);  }
 		Vector3 GetSafeNormal2D(const Vector3& vec) const 
 		{
 			Vector3 horizontal = Vector3(vec.x, 0, vec.z);
-			double len = horizontal.length();
+			float len = horizontal.length();
 
 			if (len < 1e-6) {  // Near-zero check
 				return Vector3(0, 0, 0).normalized();

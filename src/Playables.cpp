@@ -329,7 +329,7 @@ void Playables::_input(const Ref<InputEvent>& event)
 		if (Cam != nullptr)
 		{
 			Vector3 current_rotation = Cam->get_rotation();
-			double new_x = std::clamp(
+			float new_x = std::clamp(
 				current_rotation.x - lookInput.y / 1000,
 				(float)Math::deg_to_rad(-90.0),
 				(float)Math::deg_to_rad(90.0)
@@ -369,16 +369,16 @@ Vector3 Playables::GetSlideDirection()
 
 	if (is_on_floor())
 	{
-		double DotProduct = 1.0 - (get_floor_normal().dot(UPWARDS));
-		return get_floor_normal().slide(UPWARDS) * std::clamp(DotProduct, 0.0, 1.0);
+		float DotProduct = 1.0 - (get_floor_normal().dot(UPWARDS));
+		return get_floor_normal().slide(UPWARDS) * std::clamp(DotProduct, 0.0f, 1.0f);
 	}
 
 	return Vector3();
 }
 
-double Playables::GetSimulationTimeStep(double remainder, int iteration)
+float Playables::GetSimulationTimeStep(float remainder, int iteration)
 {
-	//	double UCharacterMovementComponent::GetSimulationTimeStep(double RemainingTime, int32 Iterations) const
+	//	float UCharacterMovementComponent::GetSimulationTimeStep(float RemainingTime, int32 Iterations) const
 	//	{
 	//		static uint32 s_WarningCount = 0;
 	//		if (RemainingTime > MaxSimulationTimeStep)
@@ -403,28 +403,28 @@ double Playables::GetSimulationTimeStep(double remainder, int iteration)
 		//return FMath::Max(MIN_TICK_TIME, RemainingTime);
 	//		}
 	if (remainder > MAXTIMESTEP && iteration < MAXITER)
-		remainder = std::min(MAXTIMESTEP, remainder * 0.5);
+		remainder = std::min(MAXTIMESTEP, remainder * 0.5f);
 
 	return std::max(MIN_TICK_TIME, remainder);
 }
 
-double Playables::GetDashPower()
+float Playables::GetDashPower()
 {
-	double HoldTime = 0.1 * (ChargeFlags >> 4);//(CustomMovementFlags >> 4) * 0.1;
+	float HoldTime = 0.1 * (ChargeFlags >> 4);//(CustomMovementFlags >> 4) * 0.1;
 	if (MovementMode != EMovementMode::WallRunning)//(!IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun))
 	{
-		double calcLatDash = (std::clamp(HoldTime, 0.0, 1.5) + 0.4) * JumpPower * 1.1;//float calcLatDash = (FMath::Clamp(HoldTime, 0.0f, 1.5f) + 0.4f) * JumpPower * 1.1;
-		double calcFreeDash = JumpPower * (std::clamp(HoldTime, 0.0, 1.5) + 0.2); //float calcFreeDash = JumpPower * (FMath::Clamp(HoldTime, 0.0f, 1.5f) + 0.2);
-		double LatDashStrength = (MaxDashStrength > calcLatDash) && MaxDashActive ? MaxDashStrength : (VELMAG() > calcLatDash ? VELMAG() : calcLatDash);
-		double FreeDashStrength = (MaxDashStrength > calcFreeDash) && MaxDashActive ? MaxDashStrength : (VELMAG() > calcFreeDash ? VELMAG() : calcFreeDash);
-		double Value = IsPlayerFreeDashing() ? (FreeDashStrength) : LatDashStrength;
+		float calcLatDash = (std::clamp(HoldTime, 0.0f, 1.5f) + 0.4) * JumpPower * 1.1;//float calcLatDash = (FMath::Clamp(HoldTime, 0.0f, 1.5f) + 0.4f) * JumpPower * 1.1;
+		float calcFreeDash = JumpPower * (std::clamp(HoldTime, 0.0f, 1.5f) + 0.2); //float calcFreeDash = JumpPower * (FMath::Clamp(HoldTime, 0.0f, 1.5f) + 0.2);
+		float LatDashStrength = (MaxDashStrength > calcLatDash) && MaxDashActive ? MaxDashStrength : (VELMAG() > calcLatDash ? VELMAG() : calcLatDash);
+		float FreeDashStrength = (MaxDashStrength > calcFreeDash) && MaxDashActive ? MaxDashStrength : (VELMAG() > calcFreeDash ? VELMAG() : calcFreeDash);
+		float Value = IsPlayerFreeDashing() ? (FreeDashStrength) : LatDashStrength;
 		//UtilityFunctions::print(calcFreeDash," ", calcLatDash);
 		return /*CanDashFreely && CanDashLaterally ?*/ Value /*: CanDashFreely ? FreeDashStrength : JumpStrength*/;
 	}
 	else
 	{
-		double calcFreeDash = JumpPower * (std::clamp(HoldTime, 0.0, 1.5) + 0.2);
-		double FreeDashStrength = (MaxDashStrength > calcFreeDash) ?/* Safe_MaxDashTimer > 0*/ MaxDashActive ? MaxDashStrength : VELMAG() : calcFreeDash;
+		float calcFreeDash = JumpPower * (std::clamp(HoldTime, 0.0f, 1.5f) + 0.2);
+		float FreeDashStrength = (MaxDashStrength > calcFreeDash) ?/* Safe_MaxDashTimer > 0*/ MaxDashActive ? MaxDashStrength : VELMAG() : calcFreeDash;
 		return /*CanDashFreely ?*/ FreeDashStrength /*: 0*/;
 	}
 
@@ -447,7 +447,7 @@ Vector3 Playables::getForwardDir() const
 #pragma endregion
 
 #pragma region Ticks
-void Playables::PhysTick(double delta, int iteration)
+void Playables::PhysTick(float delta, int iteration)
 {
 	if (Engine::get_singleton()->is_editor_hint()) {
 		return;
@@ -502,7 +502,7 @@ void Playables::PhysTick(double delta, int iteration)
 	//move_and_slide();
 }
 
-void Playables::WalkTick(double delta, int iteration)
+void Playables::WalkTick(float delta, int iteration)
 {
 	float remainingTime = delta;
 
@@ -516,20 +516,20 @@ void Playables::WalkTick(double delta, int iteration)
 		if (!InputDirection.is_zero_approx() /*&& !(vel.length() >= (IsSprinting() || VELMAG() > MaxRunSpeed ? MaxRunSpeed : MaxWalkSpeed))*/)
 		{
 			vel += RelativeInputDirection.normalized() * timeTick * Acceleration;
-			vel = vel.normalized() * std::clamp((double)vel.length(), 0.0, VELMAG() > MaxRunSpeed
+			vel = vel.normalized() * std::clamp((float)vel.length(), 0.0f, VELMAG() > MaxRunSpeed
 				? VELMAG()
 				: IsSprinting() || VELMAG() > MaxWalkSpeed + 0.5
 				? MaxRunSpeed
 				: (IsCrouching() ? MaxCrouchSpeed : MaxWalkSpeed));
 
 			//use these for fluid braking and acceleration friction braking 
-			vel = vel - (vel - RelativeInputDirection * vel.length()) * std::min(delta * currFriction, 1.);
+			vel = vel - (vel - RelativeInputDirection * vel.length()) * std::min(delta * currFriction, 1.f);
 		}
 		else
 		{
 			vel = (vel.normalized() * std::clamp((double)vel.length() - (Deceleration * timeTick), 0.0, (double)vel.length()));
 		}
-		currFriction = std::clamp(currFriction + timeTick * WalkFriction * 2, 0.0, WalkFriction);
+		currFriction = std::clamp(currFriction + timeTick * WalkFriction * 2, 0.0f, WalkFriction);
 		/*if (vel != vel.slide(get_floor_normal()))
 			UtilityFunctions::print("changed Based On normal");
 		vel = vel.slide(get_floor_normal()).normalized() * vel.length();*/
@@ -546,7 +546,7 @@ void Playables::WalkTick(double delta, int iteration)
 	}
 }
 
-void Playables::FallingTick(double delta, int iteration)
+void Playables::FallingTick(float delta, int iteration)
 {
 	float remainingTime = delta;
 	while ((remainingTime >= MIN_TICK_TIME) && (iteration < MAXITER))
@@ -561,7 +561,7 @@ void Playables::FallingTick(double delta, int iteration)
 		}
 
 		//fluid braking 
-		vel = vel * (1. - std::min(SlideFriction * delta, 1.)); //Velocity = Velocity * (1.f - FMath::Min(Friction * DeltaTime, 1.f));
+		vel = vel * (1. - std::min(SlideFriction * delta, 1.f)); //Velocity = Velocity * (1.f - FMath::Min(Friction * DeltaTime, 1.f));
 
 		//Basis b = get_global_transform().get_basis();
 		//Vector3 forward = -b.get_column(2) * -InputDirection.y;
@@ -585,7 +585,7 @@ void Playables::FallingTick(double delta, int iteration)
 
 }
 
-void Playables::SlidingTick(double delta, int iteration)
+void Playables::SlidingTick(float delta, int iteration)
 {
 	float remainingTime = delta;
 	while ((remainingTime >= MIN_TICK_TIME) && (iteration < MAXITER))
@@ -594,8 +594,8 @@ void Playables::SlidingTick(double delta, int iteration)
 		float timeTick = GetSimulationTimeStep(remainingTime, iteration);
 		remainingTime -= timeTick;
 		Vector3 vel = VEL();
-		vel = vel * (is_on_floor() ? (1.f - std::min(currFriction * timeTick, 1.)) : 1);
-		currFriction = std::clamp(currFriction + timeTick, 0.0, SlideFriction);
+		vel = vel * (is_on_floor() ? (1.f - std::min(currFriction * timeTick, 1.f)) : 1);
+		currFriction = std::clamp(currFriction + timeTick, 0.0f, SlideFriction);
 
 		if (is_on_floor() && !PrevFloor)
 		{
@@ -646,7 +646,7 @@ void Playables::SlidingTick(double delta, int iteration)
 	}
 }
 
-void Playables::WallRunTick(double delta, int iteration)
+void Playables::WallRunTick(float delta, int iteration)
 {
 	float remainingTime = delta;
 	while ((remainingTime >= MIN_TICK_TIME) && (iteration < MAXITER))
@@ -685,7 +685,7 @@ void Playables::WallRunTick(double delta, int iteration)
 }
 #pragma endregion
 
-void Playables::StartNewPhysics(double deltaTime, int Iterations)
+void Playables::StartNewPhysics(float deltaTime, int Iterations)
 {
 	if (Engine::get_singleton()->is_editor_hint()) {
 		return;
@@ -750,7 +750,7 @@ void Playables::OnMovementModeChanged(int PreviousMovementModeINT)
 	}
 }
 
-void Playables::UpdateCharacterStateBeforeMovement(double deltaSeconds)
+void Playables::UpdateCharacterStateBeforeMovement(float deltaSeconds)
 {
 	MaxDashStrength = VELMAG() > MaxDashStrength ? VELMAG() : MaxDashStrength;
 	CanCoyoteTimeJump = is_on_floor() || MovementMode == WallRunning ? true : CanCoyoteTimeJump;
@@ -790,7 +790,7 @@ void Playables::UpdateCharacterStateBeforeMovement(double deltaSeconds)
 	CamUpdateBRIDGE(deltaSeconds); 
 }
 
-void Playables::UpdateCharacterStateAfterMovement(double deltaSeconds)
+void Playables::UpdateCharacterStateAfterMovement(float deltaSeconds)
 {
 	PrevInputFlags = InputFlags; //so we know when players release buttons and what not
 	PrevFloor = is_on_floor(); 
@@ -937,9 +937,9 @@ void Playables::SetUpDashTimer(bool isStart)
 
 bool Playables::ShouldCatchAir(Vector3 oldNorm, Vector3 newNorm)
 {
-	double oldYVel = std::clamp((double)VEL().slide(oldNorm.normalized()).y, 0.0, VELMAG()); //float oldZVel = FMath::Clamp(FVector::VectorPlaneProject(Velocity, OldFloor.HitResult.Normal).Z, 0.0f, Velocity.Size());
-	double newYVel = std::clamp((double)VEL().slide(newNorm.normalized()).y, 0.0, VELMAG());//float newZVel = FMath::Clamp(FVector::VectorPlaneProject(Velocity, NewFloor.HitResult.Normal).Z, 0.0f, Velocity.Size());
-	bool WillCatchAir = (oldNorm != newNorm) && std::clamp((oldYVel - newYVel), 0., VELMAG()) > 0.1; //bool willCatchAir = (OldFloor.HitResult.Normal != NewFloor.HitResult.Normal) && FMath::Clamp((oldZVel - newZVel), 0.0f, Velocity.Size()) > 10.0f;
+	float oldYVel = std::clamp((float)VEL().slide(oldNorm.normalized()).y, 0.0f, VELMAG()); //float oldZVel = FMath::Clamp(FVector::VectorPlaneProject(Velocity, OldFloor.HitResult.Normal).Z, 0.0f, Velocity.Size());
+	float newYVel = std::clamp((float)VEL().slide(newNorm.normalized()).y, 0.0f, VELMAG());//float newZVel = FMath::Clamp(FVector::VectorPlaneProject(Velocity, NewFloor.HitResult.Normal).Z, 0.0f, Velocity.Size());
+	bool WillCatchAir = (oldNorm != newNorm) && std::clamp((oldYVel - newYVel), 0.f, VELMAG()) > 0.1; //bool willCatchAir = (OldFloor.HitResult.Normal != NewFloor.HitResult.Normal) && FMath::Clamp((oldZVel - newZVel), 0.0f, Velocity.Size()) > 10.0f;
 	//default gravity is 980 so if the zcomponent is greater than this than we know that its prolly gonna catch some air cool? 
 	//if(willCatchAir)
 	//GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Green, FString::Printf(TEXT("Catching Air?: %f"), (oldZVel - newZVel)));
@@ -952,9 +952,9 @@ bool Playables::ShouldCatchAir(Vector3 oldNorm, Vector3 newNorm)
 	return WillCatchAir;
 }
 
-void Playables::CamUpdate(double delta)
+void Playables::CamUpdate(float delta)
 {
-	double Offset = Math::lerp(0., (double)Cam->get_position().y, std::clamp(CrouchBlendTime / CrouchBlendDuration, 0., 1.));
+	float Offset = Math::lerp(0.f, (float)Cam->get_position().y, std::clamp(CrouchBlendTime / CrouchBlendDuration, 0.f, 1.f));
 	//UtilityFunctions::print(CrouchBlendTime);
 	if (MovementMode == WallRunning) 
 	{
@@ -969,7 +969,7 @@ void Playables::CamUpdate(double delta)
 		else RollTarget = 0;
 	}
 
-	CrouchBlendTime = std::clamp(CrouchBlendTime + (IsCrouching() ? delta : -delta), 0., CrouchBlendDuration);	//
+	CrouchBlendTime = std::clamp(CrouchBlendTime + (IsCrouching() ? delta : -delta), 0.f, CrouchBlendDuration);	//
 
 	if (isShaking && Cam && noise)
 	{
@@ -984,8 +984,8 @@ void Playables::CamUpdate(double delta)
 	}
 	else if (Cam)
 	{
-		Cam->set_h_offset(Math::lerp((double)Cam->get_h_offset(), 0, OffsetLerpBackFactor * delta));
-		Cam->set_v_offset(Math::lerp((double)Cam->get_v_offset(), 0, OffsetLerpBackFactor * delta));
+		Cam->set_h_offset(Math::lerp((float)Cam->get_h_offset(), 0.f, OffsetLerpBackFactor * delta));
+		Cam->set_v_offset(Math::lerp((float)Cam->get_v_offset(), 0.f, OffsetLerpBackFactor * delta));
 
 		Cam->set_position(/*Vector3(Math::lerp((double)Cam->get_h_offset(), 0, OffsetLerpBackFactor * delta)
 			, Math::lerp((double)Cam->get_v_offset(), 0, OffsetLerpBackFactor * delta), 0) +*/ UPWARDS * Offset);
@@ -996,7 +996,7 @@ void Playables::CamUpdate(double delta)
 	Vector3 currRot = Cam->get_rotation(); 
 	Cam->set_rotation(Vector3(currRot.x, currRot.y, CurrentRoll));
 
-	Cam->set_fov(Math::lerp(defaultFOV, defaultFOV + maxFOVIncrease, std::clamp(VELMAG()/FOVVelCap, 0.0, 1.0)));
+	Cam->set_fov(Math::lerp(defaultFOV, defaultFOV + maxFOVIncrease, std::clamp(VELMAG()/FOVVelCap, 0.0f, 1.0f)));
 }
 
 void Playables::UpdateCapsuleSize()
@@ -1159,7 +1159,7 @@ bool Playables::CheckToJump()
 
 void Playables::OnGroundDash()
 {	
-	double power = std::clamp(GetDashPower(), 0.0, MaxDashClamp);
+	float power = std::clamp(GetDashPower(), 0.0f, MaxDashClamp);
 	Vector3 Vel = VEL();
 	Vel = IsPlayerFreeDashing()						//checks if pressing w or nothing
 		? getForwardDir() * power					//All true? then just dash where u looking
@@ -1178,7 +1178,7 @@ void Playables::OnWallDash()
 	//float FreeDashStrength = (MaxDashStrength > calcFreeDash) ?/* Safe_MaxDashTimer > 0*/ MaxDashActive ? MaxDashStrength : Velocity.Size() : calcFreeDash;
 	//Velocity = (PlayableOwner->GetControlRotation().Vector() * FreeDashStrength);
 	//float calcFreeDash = JumpPower * (FMath::Clamp(HoldTime, 0, 1.5) + 0.2);
-	double power = std::clamp(GetDashPower(), 0.0, MaxDashClamp);
+	float power = std::clamp(GetDashPower(), 0.0f, MaxDashClamp);
 	Vector3 Vel = getForwardDir() * power;
 
 	set_velocity(Vel);
@@ -1189,11 +1189,11 @@ void Playables::OnWallDash()
 
 void Playables::OnGroundJump()
 {
-	double HoldTime = GetCharge(false) * 0.1; //(CustomMovementFlags & 15) * 0.1;
+	float HoldTime = GetCharge(false) * 0.1; //(CustomMovementFlags & 15) * 0.1;
 	Vector3 Vel = VEL();
-	Vel.y = !is_on_floor() ? std::clamp((double)Vel.y, 0.0, VELMAG()) : std::clamp((double)Vel.slide(get_floor_normal()).y, 0.0, VELMAG());//Velocity.Z = !CurrentFloor.bBlockingHit ? FMath::Clamp(Velocity.Z, 0.0f, Velocity.Size()) : FMath::Clamp(FVector::VectorPlaneProject(Velocity, CurrentFloor.HitResult.Normal).Z, 0.0f, Velocity.Size());
-	Vel += is_on_floor() ? get_floor_normal() * std::clamp((std::clamp(HoldTime, 0.0, 1.5) + 0.4) * JumpPower, (double)JumpClamps.x, (double)JumpClamps.y)//Velocity += CurrentFloor.bBlockingHit ? CurrentFloor.HitResult.Normal * FMath::Clamp((FMath::Clamp(HoldTime, 0.0f, 1.5f) + .4f) * JumpPower, Jump_Clamps.X, Jump_Clamps.Y)
-		: std::clamp((std::clamp(HoldTime, 0.0, 1.5) + 0.4) * JumpPower, (double)JumpClamps.x, (double)JumpClamps.y) * UPWARDS + DOWNWARDS * JumpPower * 0.25 * CoyoteSlideRefreshCnt;//: FMath::Clamp((FMath::Clamp(HoldTime, 0.0f, 1.5f) + .4f) * JumpPower, Jump_Clamps.X, Jump_Clamps.Y) * FVector::UpVector + FVector::DownVector * JumpPower * 0.25f * CoyoteSlideRefreshCnt;
+	Vel.y = !is_on_floor() ? std::clamp((float)Vel.y, 0.0f, VELMAG()) : std::clamp((float)Vel.slide(get_floor_normal()).y, 0.0f, VELMAG());//Velocity.Z = !CurrentFloor.bBlockingHit ? FMath::Clamp(Velocity.Z, 0.0f, Velocity.Size()) : FMath::Clamp(FVector::VectorPlaneProject(Velocity, CurrentFloor.HitResult.Normal).Z, 0.0f, Velocity.Size());
+	Vel += is_on_floor() ? get_floor_normal() * std::clamp((std::clamp(HoldTime, 0.0f, 1.5f) + 0.4) * JumpPower, (double)JumpClamps.x, (double)JumpClamps.y)//Velocity += CurrentFloor.bBlockingHit ? CurrentFloor.HitResult.Normal * FMath::Clamp((FMath::Clamp(HoldTime, 0.0f, 1.5f) + .4f) * JumpPower, Jump_Clamps.X, Jump_Clamps.Y)
+		: std::clamp((std::clamp(HoldTime, 0.0f, 1.5f) + 0.4f) * JumpPower, (float)JumpClamps.x, (float)JumpClamps.y) * UPWARDS + DOWNWARDS * JumpPower * 0.25f * CoyoteSlideRefreshCnt;//: FMath::Clamp((FMath::Clamp(HoldTime, 0.0f, 1.5f) + .4f) * JumpPower, Jump_Clamps.X, Jump_Clamps.Y) * FVector::UpVector + FVector::DownVector * JumpPower * 0.25f * CoyoteSlideRefreshCnt;
 
 	if (!is_on_floor()) CoyoteSlideRefreshCnt++;
 
@@ -1202,12 +1202,12 @@ void Playables::OnGroundJump()
 
 void Playables::OnWallJump()
 {
-	double HoldTime = GetCharge(false) * 0.1;//(CustomMovementFlags & 15) * 0.1;
+	float HoldTime = GetCharge(false) * 0.1;//(CustomMovementFlags & 15) * 0.1;
 	Vector3 Vel = VEL();
 
 	Vel.y = Vel.y < 0 ? 0 : Vel.y; //Velocity.Z = Velocity.Z < 0 ? 0 : Velocity.Z;
-	Vel += (get_wall_normal().slide(UPWARDS) * JumpPower * (std::clamp(HoldTime, 0.0, 1.5) + .2)
-		+ (UPWARDS * (std::clamp(HoldTime, 0.0, 0.75) * 1) * JumpPower));
+	Vel += (get_wall_normal().slide(UPWARDS) * JumpPower * (std::clamp(HoldTime, 0.0f, 1.5f) + .2)
+		+ (UPWARDS * (std::clamp(HoldTime, 0.0f, 0.75f) * 1) * JumpPower));
 	//Velocity += (wallhit.Normal.GetSafeNormal2D() * WallRun_AttractionForce * (FMath::Clamp(HoldTime, 0.0f, 1.5f) + 1))
 			//+ (FVector::UpVector * (FMath::Clamp(HoldTime, 0.0f, 0.75f) * 2) * JumpPower);
 	set_velocity(Vel); //kill me 
