@@ -770,7 +770,7 @@ void Playables::UpdateCharacterStateBeforeMovement(float deltaSeconds)
 	}
 	GroundCheckRay->force_raycast_update(); 
 	if (MovementMode != EMovementMode::WallRunning && (is_on_wall_only() && !GroundCheckRay->is_colliding()
-		&& (LastWallNormal != get_wall_normal() || (LastYTouchedWall - LowerAllowedWall) > get_global_position().y)) && !(IsCrouching() && VELMAG() > minSlideVel))
+		&& (!LastWallNormal.is_equal_approx(get_wall_normal()) || (LastYTouchedWall - LowerAllowedWall) > get_global_position().y)) && !(IsCrouching() && VELMAG() > minSlideVel))
 	{
 		SetMovementMode(EMovementMode::WallRunning);
 	}
