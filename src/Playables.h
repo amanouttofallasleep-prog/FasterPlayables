@@ -151,7 +151,8 @@ namespace godot {
 		float ShakeDecay = 1;
 		
 		//The max speed to get the full fov increase
-		float FOVVelCap = 50; 
+		BIND_GETSET(float, FOVVelCap, 100 / 3.6); 
+		//float FOVVelCap = 27.77; 
 
 		//the maximum actual power you are able to jump OR dash 
 		//float MaxDashClamp = 100/3.6; 
@@ -302,8 +303,9 @@ namespace godot {
 		float OffsetLerpBackFactor = 10.5; 
 
 		//
-		float defaultFOV = 90;
-
+		BIND_GETSET(float, defaultFOV, 90); 
+		//float defaultFOV = 90;
+		BIND_GETSET(bool, IsInputActive, true); 
 		//not sure if i really want head bobbing yet
 			////based of unreal engine
 			////Amplitude of the x and y location axis 
@@ -448,8 +450,8 @@ namespace godot {
 		float GetShakeDecay() { return ShakeDecay; }
 		void SetShakeDecay(float newVal) { ShakeDecay = newVal; }
 
-		float GetFOVVelCap() { return FOVVelCap; }
-		void SetFOVVelCap(float newVal) { FOVVelCap = newVal; }
+		/*float GetFOVVelCap() { return FOVVelCap; }
+		void SetFOVVelCap(float newVal) { FOVVelCap = newVal; }*/
 
 		float GetWallTilt() { return WallTilt; }
 		void SetWallTilt(float newVal) { WallTilt = newVal; }

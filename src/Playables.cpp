@@ -41,6 +41,9 @@ void Playables::_bind_methods()
 
 	BIND_PROP(Playables, Variant::NODE_PATH, WallCheckRayPath);
 	BIND_PROP(Playables, Variant::NODE_PATH, GroundCheckRayPath);
+	BIND_PROP(Playables, Variant::FLOAT, FOVVelCap);
+	BIND_PROP(Playables, Variant::FLOAT, defaultFOV);
+	BIND_PROP(Playables, Variant::BOOL, IsInputActive); 
 
 	ClassDB::bind_method(D_METHOD("SetMaxWalkSpeed", "speed"), &Playables::SetMaxWalkSpeed);
 	ClassDB::bind_method(D_METHOD("GetMaxWalkSpeed"), &Playables::GetMaxWalkSpeed);
@@ -322,7 +325,7 @@ void Playables::_input(const Ref<InputEvent>& event)
 		Cam.rotation.x = (clamp(Cam.rotation.x - lookInput.y / 1000, deg_to_rad(-90), deg_to_rad(90)))*/
 	//https://forum.godotengine.org/t/any-methods-to-identify-the-input-event-is-keyboard-mouse-or-joypad-in-c/47918/5
 	Ref<InputEventMouseMotion> mouse_event = event;
-	if (mouse_event.is_valid()) 
+	if (mouse_event.is_valid() && IsInputActive) 
 	{
 		Vector2 lookInput = mouse_event->get_screen_relative();
 		rotate_y(-lookInput.x / 1000);
@@ -339,12 +342,7 @@ void Playables::_input(const Ref<InputEvent>& event)
 		//UtilityFunctions::print(lookInput);
 	}
 	Ref<InputEventKey> keyboard_event = event;
-	//if (keyboard_event.is_valid()) 
-	//{
-	//	//Vector2 inputDir = Vector2::ZERO;
-	//	//if (in->is_action_pressed("move_forward")) {
-	//	
-	//}
+	
 }
 
 #pragma region Setters Getters
@@ -611,7 +609,7 @@ void Playables::SlidingTick(float delta, int iteration)
 		if (!InputDirection.is_zero_approx())
 		{
 			Vector3 inDir = (RelativeInputDirection.normalized() * timeTick * DirectionDrift * (MaxRunSpeed)); 
-			vel += Size2D(vel) < MaxRunSpeed || (vel + inDir).length() < vel.length() ? inDir : Vector3(0, 0, 0);
+			vel += Size2D(vel) < MaxRunSpeed || (vel + inDir).length() < vel.length() ? inDir : Vector3(0, 0, 0).normalized();
 			Vector3 DirectionLerp = GetSafeNormal2D(RelativeInputDirection.slide(is_on_floor() ? get_floor_normal() : UPWARDS)) * timeTick * DirectionDrift;
 			vel = (Vector3(DirectionLerp.x + vel.normalized().x, vel.normalized().y, DirectionLerp.z + vel.normalized().z)).normalized() * vel.length();
 		}
@@ -632,7 +630,7 @@ void Playables::SlidingTick(float delta, int iteration)
 		//setting up the final movement
 		//note: downwards needs to be here reguardless of if there's gravity or not 
 		//that is how move and slide is calculating the snapping assuming that there's going to be a floor collision. 
-		set_velocity(vel + (is_on_floor() ? DOWNWARDS : Vector3(0, 0, 0)));
+		set_velocity(vel + (is_on_floor() ? DOWNWARDS : Vector3(0, 0, 0).normalized()));
 		move_and_slide();
 
 		if (is_on_wall() && vel.normalized().dot(get_wall_normal().normalized()) < -0.4)
