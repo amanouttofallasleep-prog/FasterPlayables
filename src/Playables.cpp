@@ -537,7 +537,7 @@ void Playables::WalkTick(float delta, int iteration)
 		set_velocity(vel + DOWNWARDS);
 		move_and_slide();
 
-		float angleAllowedRN =  std::clamp(get_floor_angle() + 15 * TORAD, DefaultSlopeAngle * TORAD, AbsoluteMaxAllowedSlopeAngle * TORAD);
+		float angleAllowedRN =  std::clamp(get_floor_angle() + 15.f * TORAD, DefaultSlopeAngle * TORAD, AbsoluteMaxAllowedSlopeAngle * TORAD);
 		//UtilityFunctions::print(angleAllowedRN);
 		set_floor_max_angle(angleAllowedRN);
 
@@ -952,7 +952,7 @@ bool Playables::ShouldCatchAir(Vector3 oldNorm, Vector3 newNorm)
 	//GEngine->AddOnScreenDebugMessage(5, 15.0f, FColor::Yellow, TEXT("Catching Air?: %f"));
 	//UtilityFunctions::print("old: ", oldYVel, "new: ", newYVel);
 	
-	float YVEL = std::max(sin(get_floor_angle()) * VELMAG(), oldYVel); 
+	float YVEL = std::max((float)(sin(get_floor_angle()) * VELMAG()), oldYVel);
 
 	if (WillCatchAir)
 	{
