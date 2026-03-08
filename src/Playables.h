@@ -158,6 +158,9 @@ namespace godot {
 		//float MaxDashClamp = 100/3.6; 
 		BIND_GETSET(float, MaxDashClamp, 100.0 / 3.6);
 
+		BIND_GETSET(float, DefaultSlopeAngle, 45);
+		BIND_GETSET(float, AbsoluteMaxAllowedSlopeAngle, 85);
+
 		float CrouchBlendDuration = .05;
 
 #pragma endregion

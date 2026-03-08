@@ -43,7 +43,9 @@ void Playables::_bind_methods()
 	BIND_PROP(Playables, Variant::NODE_PATH, GroundCheckRayPath);
 	BIND_PROP(Playables, Variant::FLOAT, FOVVelCap);
 	BIND_PROP(Playables, Variant::FLOAT, defaultFOV);
-	BIND_PROP(Playables, Variant::BOOL, IsInputActive); 
+	BIND_PROP(Playables, Variant::FLOAT, DefaultSlopeAngle);
+	BIND_PROP(Playables, Variant::FLOAT, AbsoluteMaxAllowedSlopeAngle);
+	BIND_PROP(Playables, Variant::BOOL, IsInputActive);
 
 	ClassDB::bind_method(D_METHOD("SetMaxWalkSpeed", "speed"), &Playables::SetMaxWalkSpeed);
 	ClassDB::bind_method(D_METHOD("GetMaxWalkSpeed"), &Playables::GetMaxWalkSpeed);
@@ -535,9 +537,15 @@ void Playables::WalkTick(float delta, int iteration)
 		set_velocity(vel + DOWNWARDS);
 		move_and_slide();
 
-		if (ShouldCatchAir(oldNorm, get_floor_normal()) || !is_on_floor())
+		float angleAllowedRN =  std::clamp(get_floor_angle() + 15 * TORAD, DefaultSlopeAngle * TORAD, AbsoluteMaxAllowedSlopeAngle * TORAD);
+		//UtilityFunctions::print(angleAllowedRN);
+		set_floor_max_angle(angleAllowedRN);
+
+		if (bool should = ShouldCatchAir(oldNorm, get_floor_normal()); should || !is_on_floor())
 		{
-			SetMovementMode(EMovementMode::Falling);
+			//UtilityFunctions::print(should);
+			if(MovementMode != Falling)
+			SetMovementMode(Falling);
 			StartNewPhysicsBRIDGE(remainingTime, iteration);
 			return;
 		}
@@ -937,16 +945,24 @@ bool Playables::ShouldCatchAir(Vector3 oldNorm, Vector3 newNorm)
 {
 	float oldYVel = std::clamp((float)VEL().slide(oldNorm.normalized()).y, 0.0f, VELMAG()); //float oldZVel = FMath::Clamp(FVector::VectorPlaneProject(Velocity, OldFloor.HitResult.Normal).Z, 0.0f, Velocity.Size());
 	float newYVel = std::clamp((float)VEL().slide(newNorm.normalized()).y, 0.0f, VELMAG());//float newZVel = FMath::Clamp(FVector::VectorPlaneProject(Velocity, NewFloor.HitResult.Normal).Z, 0.0f, Velocity.Size());
-	bool WillCatchAir = (oldNorm != newNorm) && std::clamp((oldYVel - newYVel), 0.f, VELMAG()) > 0.1; //bool willCatchAir = (OldFloor.HitResult.Normal != NewFloor.HitResult.Normal) && FMath::Clamp((oldZVel - newZVel), 0.0f, Velocity.Size()) > 10.0f;
+	bool WillCatchAir = !(oldNorm.is_equal_approx(newNorm)) && std::clamp((oldYVel - newYVel), 0.f, VELMAG()) > 0.06 || oldYVel > .8 * VELMAG(); //bool willCatchAir = (OldFloor.HitResult.Normal != NewFloor.HitResult.Normal) && FMath::Clamp((oldZVel - newZVel), 0.0f, Velocity.Size()) > 10.0f;
 	//default gravity is 980 so if the zcomponent is greater than this than we know that its prolly gonna catch some air cool? 
 	//if(willCatchAir)
 	//GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Green, FString::Printf(TEXT("Catching Air?: %f"), (oldZVel - newZVel)));
 	//GEngine->AddOnScreenDebugMessage(5, 15.0f, FColor::Yellow, TEXT("Catching Air?: %f"));
+	//UtilityFunctions::print("old: ", oldYVel, "new: ", newYVel);
+	
+	float YVEL = std::max(sin(get_floor_angle()) * VELMAG(), oldYVel); 
+
 	if (WillCatchAir)
 	{
-		set_velocity(VEL().slide(oldNorm).normalized() * VELMAG()); //Velocity.Z = willCatchAir ? oldZVel : 0;
-		//UtilityFunctions::print("CaughtAir"); 
+		Vector3 vel = VEL() * Vector3(1, 0, 1) + UPWARDS * YVEL;
+		SetMovementMode(Falling); 
+		set_velocity(vel); //Velocity.Z = willCatchAir ? oldZVel : 0;
+		move_and_slide();
+		//UtilityFunctions::print(VELMAG()); 
 	}
+	//UtilityFunctions::print(WillCatchAir);
 	return WillCatchAir;
 }
 
@@ -1012,7 +1028,7 @@ void Playables::UpdateCapsuleSize()
 			Cam->set_position(DOWNWARDS * ((defaultHeight - CrouchHeight) / 2));
 			set_global_position(get_global_position() + UPWARDS * (CrouchHeight)/2);
 		}
-		UtilityFunctions::print(CapsuleBody->get_height()); 
+		//UtilityFunctions::print(CapsuleBody->get_height()); 
 	}
 }
 
@@ -1204,8 +1220,8 @@ void Playables::OnWallJump()
 	Vector3 Vel = VEL();
 
 	Vel.y = Vel.y < 0 ? 0 : Vel.y; //Velocity.Z = Velocity.Z < 0 ? 0 : Velocity.Z;
-	Vel += (get_wall_normal().slide(UPWARDS) * JumpPower * (std::clamp(HoldTime, 0.0f, 1.5f) + .2)
-		+ (UPWARDS * (std::clamp(HoldTime, 0.0f, 0.75f) * 1) * JumpPower));
+	Vel += (get_wall_normal().slide(UPWARDS) * JumpPower * ((std::clamp(HoldTime, 0.0f, 1.5f) + 0.2f) * 0.5f)
+		+ (UPWARDS * (std::clamp(HoldTime, 0.0f, 1.5f) * .5f) * JumpPower));
 	//Velocity += (wallhit.Normal.GetSafeNormal2D() * WallRun_AttractionForce * (FMath::Clamp(HoldTime, 0.0f, 1.5f) + 1))
 			//+ (FVector::UpVector * (FMath::Clamp(HoldTime, 0.0f, 0.75f) * 2) * JumpPower);
 	set_velocity(Vel); //kill me 
