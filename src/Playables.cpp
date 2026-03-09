@@ -41,7 +41,7 @@ void Playables::_bind_methods()
 
 	BIND_PROP(Playables, Variant::NODE_PATH, WallCheckRayPath);
 	BIND_PROP(Playables, Variant::NODE_PATH, GroundCheckRayPath);
-	BIND_PROP(Playables, Variant::FLOAT, FOVVelCap);
+	//BIND_PROP(Playables, Variant::FLOAT, FOVVelCap);
 	BIND_PROP(Playables, Variant::FLOAT, defaultFOV);
 	BIND_PROP(Playables, Variant::FLOAT, DefaultSlopeAngle);
 	BIND_PROP(Playables, Variant::FLOAT, AbsoluteMaxAllowedSlopeAngle);
@@ -628,13 +628,6 @@ void Playables::SlidingTick(float delta, int iteration)
 		Vector3 dir = GetSlideDirection();
 		vel += SlideFloorGravityInfluence * dir.normalized().slide(UPWARDS) * timeTick * dir.length();
 
-		if (!PrevFloor && is_on_floor())
-		{
-			Vector3 floorprojection = SlideGravity * get_floor_normal().slide(UPWARDS).slide(get_floor_normal()).normalized();
-			currFriction = 0;
-			set_velocity(get_velocity() + floorprojection);
-		}
-
 		//setting up the final movement
 		//note: downwards needs to be here reguardless of if there's gravity or not 
 		//that is how move and slide is calculating the snapping assuming that there's going to be a floor collision. 
@@ -646,6 +639,14 @@ void Playables::SlidingTick(float delta, int iteration)
 			set_velocity(GetMirroredVector(vel, get_wall_normal()));
 			CanCoyoteTimeJump = true;
 			//UtilityFunctions::print("called"); 
+		}
+
+		if (!PrevFloor && is_on_floor())
+		{
+			Vector3 floorprojection = VELMAG() * (1 - VEL().normalized().dot(get_floor_normal())) * get_floor_normal().slide(UPWARDS).slide(get_floor_normal()).normalized();
+			currFriction = 0;
+			UtilityFunctions::print(VEL().dot(floorprojection));
+			set_velocity(VEL() +  floorprojection);
 		}
 
 		PrevFloor = is_on_floor();
@@ -956,11 +957,11 @@ bool Playables::ShouldCatchAir(Vector3 oldNorm, Vector3 newNorm)
 
 	if (WillCatchAir)
 	{
-		Vector3 vel = VEL() * Vector3(1, 0, 1) + UPWARDS * YVEL;
+		Vector3 vel = VEL() * cos(get_floor_angle()/2) * Vector3(1, 0, 1) + UPWARDS * YVEL;
 		SetMovementMode(Falling); 
 		set_velocity(vel); //Velocity.Z = willCatchAir ? oldZVel : 0;
-		move_and_slide();
-		//UtilityFunctions::print(VELMAG()); 
+			move_and_slide();
+		//UtilityFunctions::print(get_floor_angle()/TORAD);
 	}
 	//UtilityFunctions::print(WillCatchAir);
 	return WillCatchAir;
