@@ -32,11 +32,7 @@
 #include <godot_cpp/classes/ray_cast3d.hpp>
 #include <godot_cpp/classes/fast_noise_lite.hpp>
 #include <godot_cpp/core/gdvirtual.gen.inc>
-<<<<<<< Updated upstream
-#include <godot_cpp/classes/area3d.hpp>
-=======
 #include <godot_cpp/classes/shape_cast3d.hpp>
->>>>>>> Stashed changes
 #include "BindMacros.h"
 
 enum EMovementMode
@@ -217,14 +213,9 @@ namespace godot {
 		RayCast3D* GroundCheckRay = nullptr;
 		NodePath GroundCheckRayPath;
 
-<<<<<<< Updated upstream
-		Area3D* CheckerArea = nullptr;
-		NodePath CheckerAreaPath;
-=======
 		/*Area3D* CheckerArea = nullptr;
 		NodePath CheckerAreaPath;*/
 		ShapeCast3D* CrouchChecking = nullptr;
->>>>>>> Stashed changes
 
 		Timer* JumpTimer = nullptr;
 		Timer* DashTimer = nullptr;
@@ -410,19 +401,11 @@ namespace godot {
 		NodePath GetGroundCheckRayPath() { return GroundCheckRayPath; }
 		void SetGroundCheckRayPath(const NodePath& p_path) { GroundCheckRayPath = p_path; }
 
-<<<<<<< Updated upstream
-		NodePath GetCheckerAreaPath() { return CheckerAreaPath; }
-		void SetCheckerAreaPath(const NodePath& p_path) { CheckerAreaPath = p_path; }
-
-		NodePath GetWallCheckRayPath() { return WallCheckRayPath; }
-		void SetWallCheckRayPath(const NodePath& p_path) { WallCheckRayPath = p_path; }
-=======
 		/*NodePath GetCheckerAreaPath() { return CheckerAreaPath; }
 		void SetCheckerAreaPath(const NodePath& p_path) { CheckerAreaPath = p_path; }*/
 
 		/*NodePath GetWallCheckRayPath() { return WallCheckRayPath; }
 		void SetWallCheckRayPath(const NodePath& p_path) { WallCheckRayPath = p_path; }*/
->>>>>>> Stashed changes
 
 		float GetCrouchHeight() { return CrouchHeight; }
 		void SetCrouchHeight(float newVal) { CrouchHeight = newVal; }
@@ -720,11 +703,7 @@ namespace godot {
 			return horizontal / len;
 		}
 
-<<<<<<< Updated upstream
-		bool CanStand();
-=======
 		void BufferStanding();
->>>>>>> Stashed changes
 	};
 }
 
