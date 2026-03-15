@@ -35,26 +35,18 @@ void Playables::_bind_methods()
 	BIND_FUNC(Playables, UpdateCharacterStateAfterMovement);
 	BIND_SIG(Playables, OBJECT, OnGroundDash);
 	BIND_PROP(Playables, Variant::FLOAT, MaxDashClamp); 
-<<<<<<< Updated upstream
 	BIND_PROP(Playables, Variant::NODE_PATH, WallCheckRayPath);
 	BIND_PROP(Playables, Variant::NODE_PATH, GroundCheckRayPath);
 	BIND_PROP(Playables, Variant::NODE_PATH, CheckerAreaPath);
-=======
-	BIND_PROP(Playables, Variant::NODE_PATH, GroundCheckRayPath);
-	//BIND_PROP(Playables, Variant::NODE_PATH, CheckerAreaPath);
->>>>>>> Stashed changes
 	BIND_PROP(Playables, Variant::FLOAT, defaultFOV);
 	BIND_PROP(Playables, Variant::FLOAT, DefaultSlopeAngle);
 	BIND_PROP(Playables, Variant::FLOAT, AbsoluteMaxAllowedSlopeAngle);
 	BIND_PROP(Playables, Variant::BOOL, IsInputActive);
 
-<<<<<<< Updated upstream
-=======
 	BIND_PROP(Playables, Variant::FLOAT, VerticalWallJumpMultiplier);
 	BIND_PROP(Playables, Variant::FLOAT, LateralWallJumpMultiplier);
 
 
->>>>>>> Stashed changes
 	BIND_SIG(Playables, OBJECT, CustomFlagValSwitched1)
 	ClassDB::bind_method(D_METHOD("SetCustomFlag1", "newVal"), &Playables::SetCustomFlag1);
 	ClassDB::bind_method(D_METHOD("IsCustomFlag1"), &Playables::IsCustomFlag1);
@@ -876,15 +868,8 @@ void Playables::init()
 		}
 	}
 
-<<<<<<< Updated upstream
-	if (!CheckerAreaPath.is_empty()){ Area3D* CheckerArea = get_node<Area3D>(CheckerAreaPath);	}
-
-	//GroundCheckRayPath
-	//WallCheckRayPath
-=======
 	/*if (!CheckerAreaPath.is_empty()){CheckerArea = get_node<Area3D>(CheckerAreaPath);	
 	}*/
->>>>>>> Stashed changes
 
 	if (!GroundCheckRayPath.is_empty()) 
 	{
@@ -1079,9 +1064,6 @@ void Playables::CamUpdate(float delta)
 
 void Playables::UpdateCapsuleSize()
 {
-<<<<<<< Updated upstream
-	if (CapsuleBody && CheckerArea) {
-=======
 	CrouchChecking->set_enabled(true); 
 	CrouchChecking->force_shapecast_update(); 
 	bool CanStand = !CrouchChecking->is_colliding(); 
@@ -1089,7 +1071,6 @@ void Playables::UpdateCapsuleSize()
 
 	if (CapsuleBody /*&& CheckerArea*/) {
 
->>>>>>> Stashed changes
 		if(IsCrouching())
 		{
 			CapsuleBody->set_height(CrouchHeight);
@@ -1097,24 +1078,16 @@ void Playables::UpdateCapsuleSize()
 			set_global_position(get_global_position() + DOWNWARDS * (defaultHeight - CrouchHeight)/2);
 			return;
 		}
-<<<<<<< Updated upstream
-		else /*if (!CheckerArea->has_overlapping_areas())*/
-=======
 
 		if (CanStand)
->>>>>>> Stashed changes
 		{
 			CapsuleBody->set_height(defaultHeight);
 			Cam->set_position(DOWNWARDS * ((defaultHeight - CrouchHeight) / 2));
 			set_global_position(get_global_position() + UPWARDS * (CrouchHeight)/2);
-<<<<<<< Updated upstream
-		}
-=======
 			return; 
 		}	
 
 		canStand = CanStand; 
->>>>>>> Stashed changes
 	}
 	UtilityFunctions::print(CheckerArea);
 
