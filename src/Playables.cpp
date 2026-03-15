@@ -35,9 +35,7 @@ void Playables::_bind_methods()
 	BIND_FUNC(Playables, UpdateCharacterStateAfterMovement);
 	BIND_SIG(Playables, OBJECT, OnGroundDash);
 	BIND_PROP(Playables, Variant::FLOAT, MaxDashClamp); 
-	BIND_PROP(Playables, Variant::NODE_PATH, WallCheckRayPath);
 	BIND_PROP(Playables, Variant::NODE_PATH, GroundCheckRayPath);
-	BIND_PROP(Playables, Variant::NODE_PATH, CheckerAreaPath);
 	BIND_PROP(Playables, Variant::FLOAT, defaultFOV);
 	BIND_PROP(Playables, Variant::FLOAT, DefaultSlopeAngle);
 	BIND_PROP(Playables, Variant::FLOAT, AbsoluteMaxAllowedSlopeAngle);
@@ -1089,8 +1087,6 @@ void Playables::UpdateCapsuleSize()
 
 		canStand = CanStand; 
 	}
-	UtilityFunctions::print(CheckerArea);
-
 }
 
 #pragma region Jump/Dash
