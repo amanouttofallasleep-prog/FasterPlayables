@@ -35,14 +35,26 @@ void Playables::_bind_methods()
 	BIND_FUNC(Playables, UpdateCharacterStateAfterMovement);
 	BIND_SIG(Playables, OBJECT, OnGroundDash);
 	BIND_PROP(Playables, Variant::FLOAT, MaxDashClamp); 
+<<<<<<< Updated upstream
 	BIND_PROP(Playables, Variant::NODE_PATH, WallCheckRayPath);
 	BIND_PROP(Playables, Variant::NODE_PATH, GroundCheckRayPath);
 	BIND_PROP(Playables, Variant::NODE_PATH, CheckerAreaPath);
+=======
+	BIND_PROP(Playables, Variant::NODE_PATH, GroundCheckRayPath);
+	//BIND_PROP(Playables, Variant::NODE_PATH, CheckerAreaPath);
+>>>>>>> Stashed changes
 	BIND_PROP(Playables, Variant::FLOAT, defaultFOV);
 	BIND_PROP(Playables, Variant::FLOAT, DefaultSlopeAngle);
 	BIND_PROP(Playables, Variant::FLOAT, AbsoluteMaxAllowedSlopeAngle);
 	BIND_PROP(Playables, Variant::BOOL, IsInputActive);
 
+<<<<<<< Updated upstream
+=======
+	BIND_PROP(Playables, Variant::FLOAT, VerticalWallJumpMultiplier);
+	BIND_PROP(Playables, Variant::FLOAT, LateralWallJumpMultiplier);
+
+
+>>>>>>> Stashed changes
 	BIND_SIG(Playables, OBJECT, CustomFlagValSwitched1)
 	ClassDB::bind_method(D_METHOD("SetCustomFlag1", "newVal"), &Playables::SetCustomFlag1);
 	ClassDB::bind_method(D_METHOD("IsCustomFlag1"), &Playables::IsCustomFlag1);
@@ -537,7 +549,7 @@ void Playables::WalkTick(float delta, int iteration)
 				? VELMAG()
 				: IsSprinting() || VELMAG() > MaxWalkSpeed + 0.5
 				? MaxRunSpeed
-				: (IsCrouching() ? MaxCrouchSpeed : MaxWalkSpeed));
+				: (IsCrouching() || !canStand ? MaxCrouchSpeed : MaxWalkSpeed));
 
 			//use these for fluid braking and acceleration friction braking 
 			vel = vel - (vel - RelativeInputDirection * vel.length()) * std::min(delta * currFriction, 1.f);
@@ -678,7 +690,10 @@ void Playables::WallRunTick(float delta, int iteration)
 		iteration++;
 		float timeTick = GetSimulationTimeStep(remainingTime, iteration);
 		remainingTime -= timeTick;
-		Vector3 vel = VEL() + (LastWallNormal.dot(get_wall_normal()) > 0.9 ? LastWallNormal : Vector3()) * 9;
+
+		//this line kinda ommits the final velocity where we just push the player into the wall with Gravity so we have whatever the player 
+		//actually has as velocity
+		Vector3 vel = VEL() + (LastWallNormal.dot(get_wall_normal()) > 0.9 ? (Gravity * LastWallNormal * Vector3(1, 0, 1)) : Vector3());
 		
 		LastWallNormal = get_wall_normal();
 		LastYTouchedWall = get_global_position().y;
@@ -691,7 +706,7 @@ void Playables::WallRunTick(float delta, int iteration)
 		vel = vel.slide(get_wall_normal()) + DOWNWARDS * WallGravity * timeTick;
 		vel = IsCrouching() ? vel * (1 - timeTick * 3) : vel;
 		//setting up the final movement
-		set_velocity(vel + (4 * -LastWallNormal * Vector3(1, 0, 1)));
+		set_velocity(vel + (Gravity * -LastWallNormal * Vector3(1, 0, 1)));
 		move_and_slide();
 
 		//WallCheckRay->set_target_position(-LastWallNormal); 
@@ -812,6 +827,8 @@ void Playables::UpdateCharacterStateBeforeMovement(float deltaSeconds)
 	}	
 
 	CamUpdateBRIDGE(deltaSeconds); 
+
+	if (!canStand && !IsCrouching()) BufferStanding(); 
 }
 
 void Playables::UpdateCharacterStateAfterMovement(float deltaSeconds)
@@ -838,7 +855,11 @@ void Playables::init()
 		in = Input::get_singleton();
 
 	// Use .is_empty() to check if the path was actually set in the Godot Inspector
-
+	CrouchChecking = memnew(ShapeCast3D);
+	add_child(CrouchChecking);
+	CrouchChecking->add_exception(this);
+	CrouchChecking->set_enabled(false);
+	CrouchChecking->set_position(Vector3(0, 0.1, 0)); 
 	if (!CamPath.is_empty()) Cam = get_node<Camera3D>(CamPath);
 	if (!CapPath.is_empty())
 	{
@@ -846,24 +867,30 @@ void Playables::init()
 		if (CapBody) {
 			CapsuleBody = Object::cast_to<CapsuleShape3D>(CapBody->get_shape().ptr());
 			defaultHeight = CapsuleBody->get_height();
+			Ref<CapsuleShape3D> castShape = CapsuleBody->duplicate();
+			castShape->set_radius(CapsuleBody->get_radius() * 0.9f); // 10% thinner
+			CrouchChecking->set_shape(castShape);			
+			CrouchChecking->set_target_position(UPWARDS * (defaultHeight));
+			CrouchChecking->set_position(Vector3(0, (defaultHeight/2), 0));
+			
 		}
 	}
 
+<<<<<<< Updated upstream
 	if (!CheckerAreaPath.is_empty()){ Area3D* CheckerArea = get_node<Area3D>(CheckerAreaPath);	}
 
 	//GroundCheckRayPath
 	//WallCheckRayPath
+=======
+	/*if (!CheckerAreaPath.is_empty()){CheckerArea = get_node<Area3D>(CheckerAreaPath);	
+	}*/
+>>>>>>> Stashed changes
 
 	if (!GroundCheckRayPath.is_empty()) 
 	{
 		GroundCheckRay = get_node<RayCast3D>(GroundCheckRayPath);
 		GroundCheckRay->set_target_position(Vector3(0, -CapsuleBody->get_height(), 0)); 
 	}
-	if (!WallCheckRayPath.is_empty()) 
-	{
-		WallCheckRay = get_node<RayCast3D>(WallCheckRayPath);
-	}
-
 
 	
 	/*if (Cam == nullptr) {
@@ -986,6 +1013,23 @@ bool Playables::ShouldCatchAir(Vector3 oldNorm, Vector3 newNorm)
 	return WillCatchAir;
 }
 
+void godot::Playables::BufferStanding()
+{
+	CrouchChecking->set_enabled(true);
+	CrouchChecking->force_shapecast_update();
+	bool CanStand = !CrouchChecking->is_colliding();
+	CrouchChecking->set_enabled(false);
+
+	if (CanStand)
+	{
+		CapsuleBody->set_height(defaultHeight);
+		Cam->set_position(DOWNWARDS * ((defaultHeight - CrouchHeight) / 2));
+		set_global_position(get_global_position() + UPWARDS * (CrouchHeight) / 2);
+	}
+
+	canStand = CanStand;
+}
+
 void Playables::CamUpdate(float delta)
 {
 	float Offset = Math::lerp(0.f, (float)Cam->get_position().y, std::clamp(CrouchBlendTime / CrouchBlendDuration, 0.f, 1.f));
@@ -1035,19 +1079,42 @@ void Playables::CamUpdate(float delta)
 
 void Playables::UpdateCapsuleSize()
 {
+<<<<<<< Updated upstream
 	if (CapsuleBody && CheckerArea) {
+=======
+	CrouchChecking->set_enabled(true); 
+	CrouchChecking->force_shapecast_update(); 
+	bool CanStand = !CrouchChecking->is_colliding(); 
+	CrouchChecking->set_enabled(false);
+
+	if (CapsuleBody /*&& CheckerArea*/) {
+
+>>>>>>> Stashed changes
 		if(IsCrouching())
 		{
 			CapsuleBody->set_height(CrouchHeight);
 			Cam->set_position(UPWARDS * ((defaultHeight - CrouchHeight) / 2));
 			set_global_position(get_global_position() + DOWNWARDS * (defaultHeight - CrouchHeight)/2);
+			return;
 		}
+<<<<<<< Updated upstream
 		else /*if (!CheckerArea->has_overlapping_areas())*/
+=======
+
+		if (CanStand)
+>>>>>>> Stashed changes
 		{
 			CapsuleBody->set_height(defaultHeight);
 			Cam->set_position(DOWNWARDS * ((defaultHeight - CrouchHeight) / 2));
 			set_global_position(get_global_position() + UPWARDS * (CrouchHeight)/2);
+<<<<<<< Updated upstream
 		}
+=======
+			return; 
+		}	
+
+		canStand = CanStand; 
+>>>>>>> Stashed changes
 	}
 	UtilityFunctions::print(CheckerArea);
 
@@ -1241,10 +1308,8 @@ void Playables::OnWallJump()
 	Vector3 Vel = VEL();
 
 	Vel.y = Vel.y < 0 ? 0 : Vel.y; //Velocity.Z = Velocity.Z < 0 ? 0 : Velocity.Z;
-	Vel += (get_wall_normal().slide(UPWARDS) * JumpPower * ((std::clamp(HoldTime, 0.0f, 1.5f) + 0.2f) * 0.5f)
-		+ (UPWARDS * (std::clamp(HoldTime, 0.0f, 1.5f) * .5f) * JumpPower));
-	//Velocity += (wallhit.Normal.GetSafeNormal2D() * WallRun_AttractionForce * (FMath::Clamp(HoldTime, 0.0f, 1.5f) + 1))
-			//+ (FVector::UpVector * (FMath::Clamp(HoldTime, 0.0f, 0.75f) * 2) * JumpPower);
+	Vel += (get_wall_normal().slide(UPWARDS) * JumpPower * ((std::clamp(HoldTime, 0.0f, 1.5f) + 0.2f) * VerticalWallJumpMultiplier)	//sidewards vel
+		+ (UPWARDS * (std::clamp(HoldTime, 0.0f, 1.5f) * LateralWallJumpMultiplier) * JumpPower));									//upwards vel
 	set_velocity(Vel); //kill me 
 	SetMovementMode(Falling);
 }
