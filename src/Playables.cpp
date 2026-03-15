@@ -26,10 +26,7 @@ void Playables::_bind_methods()
 	BIND_VIRTUAL(Playables, OnJumpFailed);
 	BIND_VIRTUAL(Playables, OnDashDone);
 	BIND_VIRTUAL(Playables, OnDashFailed);
-	/*BIND_VIRTUAL_2(Playables, StartNewPhysics, Variant::FLOAT, deltaTime, Variant::FLOAT, Iteration);
-	BIND_VIRTUAL_1(Playables, OnMovementModeChanged, Variant::INT, PreviousMovementModeINT);
-	BIND_VIRTUAL_1(Playables, UpdateCharacterStateBeforeMovement, Variant::FLOAT, deltaSeconds);
-	BIND_VIRTUAL_1(Playables, UpdateCharacterStateAfterMovement, Variant::FLOAT, deltaSeconds);*/
+	
 	BIND_FUNC(Playables, CamUpdate);
 	BIND_VIRTUAL(Playables, CheckToJump); 
 	BIND_FUNC(Playables, StartNewPhysics);
@@ -38,14 +35,34 @@ void Playables::_bind_methods()
 	BIND_FUNC(Playables, UpdateCharacterStateAfterMovement);
 	BIND_SIG(Playables, OBJECT, OnGroundDash);
 	BIND_PROP(Playables, Variant::FLOAT, MaxDashClamp); 
-
 	BIND_PROP(Playables, Variant::NODE_PATH, WallCheckRayPath);
 	BIND_PROP(Playables, Variant::NODE_PATH, GroundCheckRayPath);
-	//BIND_PROP(Playables, Variant::FLOAT, FOVVelCap);
+	BIND_PROP(Playables, Variant::NODE_PATH, CheckerAreaPath);
 	BIND_PROP(Playables, Variant::FLOAT, defaultFOV);
 	BIND_PROP(Playables, Variant::FLOAT, DefaultSlopeAngle);
 	BIND_PROP(Playables, Variant::FLOAT, AbsoluteMaxAllowedSlopeAngle);
 	BIND_PROP(Playables, Variant::BOOL, IsInputActive);
+
+	BIND_SIG(Playables, OBJECT, CustomFlagValSwitched1)
+	ClassDB::bind_method(D_METHOD("SetCustomFlag1", "newVal"), &Playables::SetCustomFlag1);
+	ClassDB::bind_method(D_METHOD("IsCustomFlag1"), &Playables::IsCustomFlag1);
+
+	BIND_SIG(Playables, OBJECT, CustomFlagValSwitched12)
+	ClassDB::bind_method(D_METHOD("SetCustomFlag2", "newVal"), &Playables::SetCustomFlag2);
+	ClassDB::bind_method(D_METHOD("IsCustomFlag2"), &Playables::IsCustomFlag2);
+
+	BIND_SIG(Playables, OBJECT, CustomFlagValSwitched3)
+	ClassDB::bind_method(D_METHOD("SetCustomFlag3", "newVal"), &Playables::SetCustomFlag3);
+	ClassDB::bind_method(D_METHOD("IsCustomFlag3"), &Playables::IsCustomFlag3);
+
+	BIND_SIG(Playables, OBJECT, CustomFlagValSwitched4)
+	ClassDB::bind_method(D_METHOD("SetCustomFlag4", "newVal"), &Playables::SetCustomFlag4);
+	ClassDB::bind_method(D_METHOD("IsCustomFlag4"), &Playables::IsCustomFlag4);
+
+	BIND_SIG(Playables, OBJECT, CustomFlagValSwitched5)
+	ClassDB::bind_method(D_METHOD("SetCustomFlag5", "newVal"), &Playables::SetCustomFlag5);
+	ClassDB::bind_method(D_METHOD("IsCustomFlag5"), &Playables::IsCustomFlag5);
+
 
 	ClassDB::bind_method(D_METHOD("SetMaxWalkSpeed", "speed"), &Playables::SetMaxWalkSpeed);
 	ClassDB::bind_method(D_METHOD("GetMaxWalkSpeed"), &Playables::GetMaxWalkSpeed);
@@ -823,15 +840,17 @@ void Playables::init()
 	// Use .is_empty() to check if the path was actually set in the Godot Inspector
 
 	if (!CamPath.is_empty()) Cam = get_node<Camera3D>(CamPath);
-	if (!CapPath.is_empty()) 
+	if (!CapPath.is_empty())
 	{
 		CapBody = get_node<CollisionShape3D>(CapPath);
-		CollisionShape3D* collision_shape = get_node<CollisionShape3D>(CapPath);
-		if (collision_shape) {
-			CapsuleBody = Object::cast_to<CapsuleShape3D>(collision_shape->get_shape().ptr());
+		if (CapBody) {
+			CapsuleBody = Object::cast_to<CapsuleShape3D>(CapBody->get_shape().ptr());
 			defaultHeight = CapsuleBody->get_height();
 		}
 	}
+
+	if (!CheckerAreaPath.is_empty()){ Area3D* CheckerArea = get_node<Area3D>(CheckerAreaPath);	}
+
 	//GroundCheckRayPath
 	//WallCheckRayPath
 
@@ -1016,21 +1035,22 @@ void Playables::CamUpdate(float delta)
 
 void Playables::UpdateCapsuleSize()
 {
-	if (CapsuleBody) {
+	if (CapsuleBody && CheckerArea) {
 		if(IsCrouching())
 		{
 			CapsuleBody->set_height(CrouchHeight);
 			Cam->set_position(UPWARDS * ((defaultHeight - CrouchHeight) / 2));
 			set_global_position(get_global_position() + DOWNWARDS * (defaultHeight - CrouchHeight)/2);
 		}
-		else 
+		else /*if (!CheckerArea->has_overlapping_areas())*/
 		{
 			CapsuleBody->set_height(defaultHeight);
 			Cam->set_position(DOWNWARDS * ((defaultHeight - CrouchHeight) / 2));
 			set_global_position(get_global_position() + UPWARDS * (CrouchHeight)/2);
 		}
-		//UtilityFunctions::print(CapsuleBody->get_height()); 
 	}
+	UtilityFunctions::print(CheckerArea);
+
 }
 
 #pragma region Jump/Dash
