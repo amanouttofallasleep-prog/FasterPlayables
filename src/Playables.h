@@ -32,6 +32,7 @@
 #include <godot_cpp/classes/ray_cast3d.hpp>
 #include <godot_cpp/classes/fast_noise_lite.hpp>
 #include <godot_cpp/core/gdvirtual.gen.inc>
+#include <godot_cpp/classes/area3d.hpp>
 #include "BindMacros.h"
 
 enum EMovementMode
@@ -210,6 +211,9 @@ namespace godot {
 		RayCast3D* WallCheckRay = nullptr;
 		NodePath WallCheckRayPath;
 		NodePath GroundCheckRayPath;
+
+		Area3D* CheckerArea = nullptr;
+		NodePath CheckerAreaPath;
 
 		Timer* JumpTimer = nullptr;
 		Timer* DashTimer = nullptr;
@@ -393,6 +397,9 @@ namespace godot {
 		NodePath GetGroundCheckRayPath() { return GroundCheckRayPath; }
 		void SetGroundCheckRayPath(const NodePath& p_path) { GroundCheckRayPath = p_path; }
 
+		NodePath GetCheckerAreaPath() { return CheckerAreaPath; }
+		void SetCheckerAreaPath(const NodePath& p_path) { CheckerAreaPath = p_path; }
+
 		NodePath GetWallCheckRayPath() { return WallCheckRayPath; }
 		void SetWallCheckRayPath(const NodePath& p_path) { WallCheckRayPath = p_path; }
 
@@ -466,7 +473,11 @@ namespace godot {
 		void SetCoyoteTime(float newVal) { CoyoteTime = newVal; }
 
 		float GetChargeIncrements() { return ChargeIncrements; }
-		void SetChargeIncrements(float newVal) { ChargeIncrements = newVal; }
+		void SetChargeIncrements(float newVal) { 
+		ChargeIncrements = newVal; 
+		JumpTimer->set_wait_time(ChargeIncrements);
+		DashTimer->set_wait_time(ChargeIncrements);
+		}
 
 		float GetTiltTimeFactor() { return TiltTimeFactor; }
 		void SetTiltTimeFactor(float newVal) { TiltTimeFactor = newVal; }
@@ -480,6 +491,7 @@ namespace godot {
 		float GetBufferTime() { return BufferTime; }
 		void SetBufferTime(float newVal) { BufferTime = newVal; }
 
+#pragma region Input Flag Getters and setters
 		void SetCrouchFlag(bool newVal) {
 			InputFlags = newVal ? InputFlags | CFLAG : InputFlags >> CFLAG << CFLAG;
 			if (newVal != WasCrouching()) UpdateCapsuleSize();
@@ -500,6 +512,48 @@ namespace godot {
 		}
 		bool IsSprinting() { return (InputFlags & SFLAG) != 0; }
 		bool WasSprinting() { return (PrevInputFlags & SFLAG) != 0; }
+
+		void SetCustomFlag1(bool newVal) {
+			if (newVal != IsCustomFlag1()) emit_signal("CustomFlagValSwitched1", this);
+			InputFlags = newVal ? InputFlags | CUSTOMFLAG1 : InputFlags & ~(CUSTOMFLAG1);
+		}
+		bool IsCustomFlag1() { return (InputFlags & CUSTOMFLAG1) != 0; }
+		bool WasCustomFlag1() { return (PrevInputFlags & CUSTOMFLAG1) != 0; }
+
+		void SetCustomFlag2(bool newVal) {
+			if (newVal != IsCustomFlag2()) emit_signal("CustomFlagValSwitched2", this);
+			InputFlags = newVal ? InputFlags | CUSTOMFLAG2 : InputFlags & ~(CUSTOMFLAG2);
+		}
+		bool IsCustomFlag2() { return (InputFlags & CUSTOMFLAG2) != 0; }
+		bool WasCustomFlag2() { return (PrevInputFlags & CUSTOMFLAG2) != 0; }
+
+		void SetCustomFlag3(bool newVal) {
+			if (newVal != IsCustomFlag3()) emit_signal("CustomFlagValSwitched3", this);
+			InputFlags = newVal ? InputFlags | CUSTOMFLAG3 : InputFlags & ~(CUSTOMFLAG3);
+		}
+		bool IsCustomFlag3() { return (InputFlags & CUSTOMFLAG3) != 0; }
+		bool WasCustomFlag3() { return (PrevInputFlags & CUSTOMFLAG3) != 0; }
+
+		void SetCustomFlag4(bool newVal) {
+			if (newVal != IsCustomFlag4()) emit_signal("CustomFlagValSwitched4", this);
+			InputFlags = newVal ? InputFlags | CUSTOMFLAG4 : InputFlags & ~(CUSTOMFLAG4);
+		}
+		bool IsCustomFlag4() { return (InputFlags & CUSTOMFLAG4) != 0; }
+		bool WasCustomFlag4() { return (PrevInputFlags & CUSTOMFLAG4) != 0; }
+
+		void SetCustomFlag5(bool newVal) {
+			if (newVal != IsCustomFlag5()) emit_signal("CustomFlagValSwitched5", this);
+			InputFlags = newVal ? InputFlags | CUSTOMFLAG5 : InputFlags & ~(CUSTOMFLAG5);
+		}
+		bool IsCustomFlag5() { return (InputFlags & CUSTOMFLAG5) != 0; }
+		bool WasCustomFlag5() { return (PrevInputFlags & CUSTOMFLAG5) != 0; }
+
+
+
+		
+#pragma endregion
+
+
 
 		////////////////////////////////////////////////////////////////////////////////////////
 		void SetGravity(float newVal) { Gravity = newVal; }
@@ -644,6 +698,8 @@ namespace godot {
 
 			return horizontal / len;
 		}
+
+		bool CanStand();
 	};
 }
 
