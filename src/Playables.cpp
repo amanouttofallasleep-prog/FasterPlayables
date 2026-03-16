@@ -44,6 +44,7 @@ void Playables::_bind_methods()
 	BIND_PROP(Playables, Variant::FLOAT, VerticalWallJumpMultiplier);
 	BIND_PROP(Playables, Variant::FLOAT, LateralWallJumpMultiplier);
 
+	BIND_VIRTUAL_2(Playables, ScreenShake, FLOAT, intensity, FLOAT, time);
 
 	BIND_SIG(val, BOOL, CustomFlagValSwitched1)
 	ClassDB::bind_method(D_METHOD("SetCustomFlag1", "newVal"), &Playables::SetCustomFlag1);
@@ -599,7 +600,7 @@ void Playables::FallingTick(float delta, int iteration)
 
 		if (is_on_floor())
 		{
-			ScreenShake(abs(vel.y) * .1 + LandShakeIntensity, LandShakeTime + abs(vel.y) * 0.001);
+			ScreenShakeBRIDGE(abs(vel.y) * .1 + LandShakeIntensity, LandShakeTime + abs(vel.y) * 0.001);
 			//UtilityFunctions::print(abs(vel.y) * 0.1);
 			SetMovementMode(EMovementMode::Walking);
 			StartNewPhysicsBRIDGE(remainingTime, iteration);
@@ -624,7 +625,7 @@ void Playables::SlidingTick(float delta, int iteration)
 
 		if (is_on_floor() && !PrevFloor)
 		{
-			ScreenShake(abs(vel.y) * .1 + LandShakeIntensity, LandShakeTime + abs(vel.y) * 0.001);
+			ScreenShakeBRIDGE(abs(vel.y) * .1 + LandShakeIntensity, LandShakeTime + abs(vel.y) * 0.001);
 			Vector3 floorprojection = get_floor_normal().slide(UPWARDS).slide(get_floor_normal()).normalized() * -(get_velocity().dot(-get_floor_normal()));
 			currFriction = 0;
 			set_velocity(get_velocity() + floorprojection);
@@ -971,6 +972,24 @@ void Playables::SetUpDashTimer(bool isStart)
 
 }
 
+void Playables::ScreenShake(float intensity, float time)
+{
+	if (noise) {
+		noise->set_seed(rand());
+		noise->set_frequency(2.0); //why is this const? 
+	}
+
+	ShakeIntensity = abs(intensity);
+	if (ActiveShakeTimer)
+	{
+		ActiveShakeTimer->set_wait_time(time);
+		isShaking = true;
+		ActiveShakeTimer->start();
+	}
+	//UtilityFunctions::print("Intensity: ", ShakeIntensity, " sec: ", time);
+	ShakeTime = 0;
+}
+
 bool Playables::ShouldCatchAir(Vector3 oldNorm, Vector3 newNorm)
 {
 	float oldYVel = std::clamp((float)VEL().slide(oldNorm.normalized()).y, 0.0f, VELMAG()); //float oldZVel = FMath::Clamp(FVector::VectorPlaneProject(Velocity, OldFloor.HitResult.Normal).Z, 0.0f, Velocity.Size());
@@ -1302,7 +1321,7 @@ void Playables::OnJumpDone()
 				GetWorld()->GetTimerManager().ClearTimer(Safe_CoyoteTime);
 
 				GetWorld()->GetTimerManager().ClearTimer(Safe_JumpInputBuffer);*/
-		ScreenShake(VELMAG() * GetCharge(false) * .005 + ChargeActionShakeIntensity, ChargeActionShakeTime + VELMAG() * GetCharge(false) * .0005);
+		ScreenShakeBRIDGE(VELMAG() * GetCharge(false) * .005 + ChargeActionShakeIntensity, ChargeActionShakeTime + VELMAG() * GetCharge(false) * .0005);
 		MaxDashStrength = VELMAG();
 		ChargeFlags &= 240;
 		CoyoteTimeActive = false;
@@ -1348,7 +1367,7 @@ void Playables::OnDashDone()
 		//	ChargeFlags &= 15;
 		//	UtilityFunctions::print("called"); 
 		//}
-	ScreenShake(VELMAG() * GetCharge(true) * .005 + ChargeActionShakeIntensity, ChargeActionShakeTime + VELMAG() * GetCharge(true) * .0005);
+	ScreenShakeBRIDGE(VELMAG() * GetCharge(true) * .005 + ChargeActionShakeIntensity, ChargeActionShakeTime + VELMAG() * GetCharge(true) * .0005);
 	MaxDashStrength = VELMAG();
 	CanCoyoteTimeJump = false;
 	CoyoteTimeActive = false;

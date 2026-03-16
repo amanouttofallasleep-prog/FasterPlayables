@@ -661,23 +661,8 @@ namespace godot {
 			isShaking = false; 
 		}
 
-		void ScreenShake(float intensity, float time)
-		{
-			if (noise) {
-				noise->set_seed(rand()); 
-				noise->set_frequency(2.0); //why is this const? 
-			}
-
-			ShakeIntensity = abs(intensity); 
-			if(ActiveShakeTimer)
-			{
-				ActiveShakeTimer->set_wait_time(time); 
-				isShaking = true; 
-				ActiveShakeTimer->start(); 
-			}
-			//UtilityFunctions::print("Intensity: ", ShakeIntensity, " sec: ", time);
-			ShakeTime = 0; 
-		}
+		BIND_BRIDGE_VOID_2(ScreenShake, float, intensity, float, time);
+		
 
 		Vector3 GetMirroredVector(Vector3 a, Vector3 b) { return a - b * (2.f * (a.dot(b))); }
 
