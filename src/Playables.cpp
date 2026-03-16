@@ -45,23 +45,23 @@ void Playables::_bind_methods()
 	BIND_PROP(Playables, Variant::FLOAT, LateralWallJumpMultiplier);
 
 
-	BIND_SIG(Playables, OBJECT, CustomFlagValSwitched1)
+	BIND_SIG(Playables, BOOL, CustomFlagValSwitched1)
 	ClassDB::bind_method(D_METHOD("SetCustomFlag1", "newVal"), &Playables::SetCustomFlag1);
 	ClassDB::bind_method(D_METHOD("IsCustomFlag1"), &Playables::IsCustomFlag1);
 
-	BIND_SIG(Playables, OBJECT, CustomFlagValSwitched12)
+	BIND_SIG(Playables, BOOL, CustomFlagValSwitched2)
 	ClassDB::bind_method(D_METHOD("SetCustomFlag2", "newVal"), &Playables::SetCustomFlag2);
 	ClassDB::bind_method(D_METHOD("IsCustomFlag2"), &Playables::IsCustomFlag2);
 
-	BIND_SIG(Playables, OBJECT, CustomFlagValSwitched3)
+	BIND_SIG(Playables, BOOL, CustomFlagValSwitched3)
 	ClassDB::bind_method(D_METHOD("SetCustomFlag3", "newVal"), &Playables::SetCustomFlag3);
 	ClassDB::bind_method(D_METHOD("IsCustomFlag3"), &Playables::IsCustomFlag3);
 
-	BIND_SIG(Playables, OBJECT, CustomFlagValSwitched4)
+	BIND_SIG(Playables, BOOL, CustomFlagValSwitched4)
 	ClassDB::bind_method(D_METHOD("SetCustomFlag4", "newVal"), &Playables::SetCustomFlag4);
 	ClassDB::bind_method(D_METHOD("IsCustomFlag4"), &Playables::IsCustomFlag4);
 
-	BIND_SIG(Playables, OBJECT, CustomFlagValSwitched5)
+	BIND_SIG(Playables, BOOL, CustomFlagValSwitched5)
 	ClassDB::bind_method(D_METHOD("SetCustomFlag5", "newVal"), &Playables::SetCustomFlag5);
 	ClassDB::bind_method(D_METHOD("IsCustomFlag5"), &Playables::IsCustomFlag5);
 

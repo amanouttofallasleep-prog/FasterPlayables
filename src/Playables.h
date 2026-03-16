@@ -518,35 +518,35 @@ namespace godot {
 		bool WasSprinting() { return (PrevInputFlags & SFLAG) != 0; }
 
 		void SetCustomFlag1(bool newVal) {
-			if (newVal != IsCustomFlag1()) emit_signal("CustomFlagValSwitched1", this);
+			if (newVal != IsCustomFlag1()) emit_signal("CustomFlagValSwitched1", newVal);
 			InputFlags = newVal ? InputFlags | CUSTOMFLAG1 : InputFlags & ~(CUSTOMFLAG1);
 		}
 		bool IsCustomFlag1() { return (InputFlags & CUSTOMFLAG1) != 0; }
 		bool WasCustomFlag1() { return (PrevInputFlags & CUSTOMFLAG1) != 0; }
 
 		void SetCustomFlag2(bool newVal) {
-			if (newVal != IsCustomFlag2()) emit_signal("CustomFlagValSwitched2", this);
+			if (newVal != IsCustomFlag2()) emit_signal("CustomFlagValSwitched2", newVal);
 			InputFlags = newVal ? InputFlags | CUSTOMFLAG2 : InputFlags & ~(CUSTOMFLAG2);
 		}
 		bool IsCustomFlag2() { return (InputFlags & CUSTOMFLAG2) != 0; }
 		bool WasCustomFlag2() { return (PrevInputFlags & CUSTOMFLAG2) != 0; }
 
 		void SetCustomFlag3(bool newVal) {
-			if (newVal != IsCustomFlag3()) emit_signal("CustomFlagValSwitched3", this);
+			if (newVal != IsCustomFlag3()) emit_signal("CustomFlagValSwitched3", newVal);
 			InputFlags = newVal ? InputFlags | CUSTOMFLAG3 : InputFlags & ~(CUSTOMFLAG3);
 		}
 		bool IsCustomFlag3() { return (InputFlags & CUSTOMFLAG3) != 0; }
 		bool WasCustomFlag3() { return (PrevInputFlags & CUSTOMFLAG3) != 0; }
 
 		void SetCustomFlag4(bool newVal) {
-			if (newVal != IsCustomFlag4()) emit_signal("CustomFlagValSwitched4", this);
+			if (newVal != IsCustomFlag4()) emit_signal("CustomFlagValSwitched4", newVal);
 			InputFlags = newVal ? InputFlags | CUSTOMFLAG4 : InputFlags & ~(CUSTOMFLAG4);
 		}
 		bool IsCustomFlag4() { return (InputFlags & CUSTOMFLAG4) != 0; }
 		bool WasCustomFlag4() { return (PrevInputFlags & CUSTOMFLAG4) != 0; }
 
 		void SetCustomFlag5(bool newVal) {
-			if (newVal != IsCustomFlag5()) emit_signal("CustomFlagValSwitched5", this);
+			if (newVal != IsCustomFlag5()) emit_signal("CustomFlagValSwitched5", newVal);
 			InputFlags = newVal ? InputFlags | CUSTOMFLAG5 : InputFlags & ~(CUSTOMFLAG5);
 		}
 		bool IsCustomFlag5() { return (InputFlags & CUSTOMFLAG5) != 0; }
