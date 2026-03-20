@@ -317,7 +317,8 @@ namespace godot {
 		//
 		BIND_GETSET(float, defaultFOV, 90); 
 		//float defaultFOV = 90;
-		BIND_GETSET(bool, IsInputActive, true); 
+		BIND_GETSET(bool, IsInputActive, true);
+		BIND_GETSET(bool, IsChargeChallenged, false);
 		//not sure if i really want head bobbing yet
 			////based of unreal engine
 			////Amplitude of the x and y location axis 
