@@ -36,6 +36,7 @@ void Playables::_bind_methods()
 	BIND_SIG(Playables, OBJECT, OnGroundDash);
 	BIND_PROP(Playables, Variant::FLOAT, MaxDashClamp); 
 	BIND_PROP(Playables, Variant::NODE_PATH, GroundCheckRayPath);
+	BIND_PROP(Playables, Variant::NODE_PATH, CheckerAreaPath);
 	BIND_PROP(Playables, Variant::FLOAT, defaultFOV);
 	BIND_PROP(Playables, Variant::FLOAT, DefaultSlopeAngle);
 	BIND_PROP(Playables, Variant::FLOAT, AbsoluteMaxAllowedSlopeAngle);
@@ -663,10 +664,10 @@ void Playables::SlidingTick(float delta, int iteration)
 
 		if (!PrevFloor && is_on_floor())
 		{
-			Vector3 floorprojection = VELMAG() * (1 - VEL().normalized().dot(get_floor_normal())) * get_floor_normal().slide(UPWARDS).slide(get_floor_normal()).normalized();
+			Vector3 floorprojection = VELMAG() * (1 - abs(VEL().normalized().dot(get_floor_normal()))) * get_floor_normal().slide(UPWARDS).slide(get_floor_normal()).normalized();
 			currFriction = 0;
-			UtilityFunctions::print(VEL().dot(floorprojection));
-			set_velocity(VEL() +  floorprojection);
+			//UtilityFunctions::print(VEL().normalized().dot(get_floor_normal()));
+			set_velocity((VEL() + floorprojection).slide(get_floor_normal()));
 		}
 
 		PrevFloor = is_on_floor();
@@ -785,14 +786,14 @@ void Playables::UpdateCharacterStateBeforeMovement(float deltaSeconds)
 	MaxDashStrength = VELMAG() > MaxDashStrength ? VELMAG() : MaxDashStrength;
 	CanCoyoteTimeJump = is_on_floor() || MovementMode == WallRunning ? true : CanCoyoteTimeJump;
 	CoyoteSlideRefreshCnt = is_on_floor() ? 0 : CoyoteSlideRefreshCnt;
-	if (CheckToJump()) move_and_slide(); 
+	CheckToJump();
 	LastWallNormal = is_on_floor() ? Vector3() : LastWallNormal;
 
-	PrevFloor = is_on_floor();
-	Basis b = get_global_transform().get_basis();
-	PlayerForwardInput = -b.get_column(2) * -InputDirection.y;
-	PlayerRightInput = b.get_column(0) * InputDirection.x;
-	RelativeInputDirection = (PlayerForwardInput + PlayerRightInput).normalized(); // Assuming InputDirection is a Vector2 where x is left/right and y is forward/backward
+	//PrevFloor = is_on_floor();
+	//Basis b = get_global_transform().get_basis();
+	//PlayerForwardInput = -b.get_column(2) * -InputDirection.y;
+	//PlayerRightInput = b.get_column(0) * InputDirection.x;
+	//RelativeInputDirection = (PlayerForwardInput + PlayerRightInput).normalized(); // Assuming InputDirection is a Vector2 where x is left/right and y is forward/backward
 	if (MovementMode != EMovementMode::Walking && is_on_floor() && !(IsCrouching() && VELMAG() > minSlideVel))
 	{
 		//UtilityFunctions::print("Walking");
@@ -824,7 +825,6 @@ void Playables::UpdateCharacterStateBeforeMovement(float deltaSeconds)
 
 void Playables::UpdateCharacterStateAfterMovement(float deltaSeconds)
 {
-	PrevInputFlags = InputFlags; //so we know when players release buttons and what not
 	PrevFloor = is_on_floor(); 
 }
 
@@ -846,11 +846,6 @@ void Playables::init()
 		in = Input::get_singleton();
 
 	// Use .is_empty() to check if the path was actually set in the Godot Inspector
-	CrouchChecking = memnew(ShapeCast3D);
-	add_child(CrouchChecking);
-	CrouchChecking->add_exception(this);
-	CrouchChecking->set_enabled(false);
-	CrouchChecking->set_position(Vector3(0, 0.1, 0)); 
 	if (!CamPath.is_empty()) Cam = get_node<Camera3D>(CamPath);
 	if (!CapPath.is_empty())
 	{
@@ -858,13 +853,13 @@ void Playables::init()
 		if (CapBody) {
 			CapsuleBody = Object::cast_to<CapsuleShape3D>(CapBody->get_shape().ptr());
 			defaultHeight = CapsuleBody->get_height();
-			Ref<CapsuleShape3D> castShape = CapsuleBody->duplicate();
-			castShape->set_radius(CapsuleBody->get_radius() * 0.9f); // 10% thinner
-			CrouchChecking->set_shape(castShape);			
-			CrouchChecking->set_target_position(UPWARDS * (defaultHeight));
-			CrouchChecking->set_position(Vector3(0, (defaultHeight/2), 0));
-			
 		}
+	}
+
+	if (!CheckerAreaPath.is_empty())
+	{
+		CrouchChecking = get_node<Area3D>(CheckerAreaPath);
+		CrouchChecking->set_position(Vector3(0, (defaultHeight - CrouchHeight) / 2, 0));
 	}
 
 	/*if (!CheckerAreaPath.is_empty()){CheckerArea = get_node<Area3D>(CheckerAreaPath);	
@@ -1008,19 +1003,16 @@ bool Playables::ShouldCatchAir(Vector3 oldNorm, Vector3 newNorm)
 		Vector3 vel = VEL() * cos(get_floor_angle()/2) * Vector3(1, 0, 1) + UPWARDS * YVEL;
 		SetMovementMode(Falling); 
 		set_velocity(vel); //Velocity.Z = willCatchAir ? oldZVel : 0;
-			move_and_slide();
+			//move_and_slide();
 		//UtilityFunctions::print(get_floor_angle()/TORAD);
 	}
 	//UtilityFunctions::print(WillCatchAir);
 	return WillCatchAir;
 }
 
-void godot::Playables::BufferStanding()
+void Playables::BufferStanding()
 {
-	CrouchChecking->set_enabled(true);
-	CrouchChecking->force_shapecast_update();
-	bool CanStand = !CrouchChecking->is_colliding();
-	CrouchChecking->set_enabled(false);
+	bool CanStand = !CrouchChecking->has_overlapping_bodies();
 
 	if (CanStand)
 	{
@@ -1081,22 +1073,23 @@ void Playables::CamUpdate(float delta)
 
 void Playables::UpdateCapsuleSize()
 {
-	CrouchChecking->set_enabled(true); 
-	CrouchChecking->force_shapecast_update(); 
-	bool CanStand = !CrouchChecking->is_colliding(); 
-	CrouchChecking->set_enabled(false);
+	bool CanStand = !CrouchChecking->has_overlapping_bodies(); 
+
+	//UtilityFunctions::print("called");
 
 	if (CapsuleBody /*&& CheckerArea*/) {
 
 		if(IsCrouching())
 		{
+			//UtilityFunctions::print("UpdateHeight");
 			CapsuleBody->set_height(CrouchHeight);
 			Cam->set_position(UPWARDS * ((defaultHeight - CrouchHeight) / 2));
 			set_global_position(get_global_position() + DOWNWARDS * (defaultHeight - CrouchHeight)/2);
+			//UtilityFunctions::print((defaultHeight - CrouchHeight) / 2);
 			return;
 		}
 
-		if (CanStand)
+		if (CanStand /*&& IsCrouching() != WasCrouching()*/)
 		{
 			CapsuleBody->set_height(defaultHeight);
 			Cam->set_position(DOWNWARDS * ((defaultHeight - CrouchHeight) / 2));

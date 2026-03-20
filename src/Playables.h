@@ -31,8 +31,8 @@
 #include <godot_cpp/classes/collision_shape3d.hpp>
 #include <godot_cpp/classes/ray_cast3d.hpp>
 #include <godot_cpp/classes/fast_noise_lite.hpp>
+#include <godot_cpp/classes/area3d.hpp>
 #include <godot_cpp/core/gdvirtual.gen.inc>
-#include <godot_cpp/classes/shape_cast3d.hpp>
 #include "BindMacros.h"
 
 enum EMovementMode
@@ -215,7 +215,8 @@ namespace godot {
 
 		/*Area3D* CheckerArea = nullptr;
 		NodePath CheckerAreaPath;*/
-		ShapeCast3D* CrouchChecking = nullptr;
+		Area3D* CrouchChecking = nullptr;
+		NodePath CheckerAreaPath;
 
 		Timer* JumpTimer = nullptr;
 		Timer* DashTimer = nullptr;
@@ -401,8 +402,8 @@ namespace godot {
 		NodePath GetGroundCheckRayPath() { return GroundCheckRayPath; }
 		void SetGroundCheckRayPath(const NodePath& p_path) { GroundCheckRayPath = p_path; }
 
-		/*NodePath GetCheckerAreaPath() { return CheckerAreaPath; }
-		void SetCheckerAreaPath(const NodePath& p_path) { CheckerAreaPath = p_path; }*/
+		NodePath GetCheckerAreaPath() { return CheckerAreaPath; }
+		void SetCheckerAreaPath(const NodePath& p_path) { CheckerAreaPath = p_path; }
 
 		/*NodePath GetWallCheckRayPath() { return WallCheckRayPath; }
 		void SetWallCheckRayPath(const NodePath& p_path) { WallCheckRayPath = p_path; }*/
@@ -572,7 +573,14 @@ namespace godot {
 		void SetAcceleration(float newVal) { Acceleration = newVal; }
 		float GetAcceleration() { return Acceleration; }
 
-		void SetInputDirection(Vector2 inDirection) { InputDirection = inDirection; }
+		void SetInputDirection(Vector2 inDirection) { 
+			InputDirection = inDirection; 
+			PrevInputFlags = InputFlags; //so we know when players release buttons and what not
+			Basis b = get_global_transform().get_basis();
+			PlayerForwardInput = -b.get_column(2) * -InputDirection.y;
+			PlayerRightInput = b.get_column(0) * InputDirection.x;
+			RelativeInputDirection = (PlayerForwardInput + PlayerRightInput).normalized(); // Assuming InputDirection is a Vector2 where x is left/right and y is forward/backward
+		}
 		Vector2 GetInputDirection() { return InputDirection; }
 
 		void SetMaxWalkSpeed(float speed) { MaxWalkSpeed = speed; };
