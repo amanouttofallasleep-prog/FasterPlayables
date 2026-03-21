@@ -573,9 +573,16 @@ void Playables::WalkTick(float delta, int iteration)
 		set_velocity(vel + DOWNWARDS);
 		move_and_slide();
 
-		float angleAllowedRN = std::clamp(get_floor_angle() + 25.f * TORAD, DefaultSlopeAngle * TORAD, AbsoluteMaxAllowedSlopeAngle * TORAD);
+		float angleAllowedRN = std::clamp(get_floor_angle() + 45.f * TORAD, DefaultSlopeAngle * TORAD, AbsoluteMaxAllowedSlopeAngle * TORAD);
 		//UtilityFunctions::print(angleAllowedRN);
 		set_floor_max_angle(angleAllowedRN);
+
+		if(VEL().y > 0) //we jumpin
+		{
+			SetMovementMode(Falling);
+			StartNewPhysicsBRIDGE(remainingTime, iteration);
+			return;
+		}
 
 		if (bool should = ShouldCatchAir(oldNorm, get_floor_normal()); should || !is_on_floor())
 		{
@@ -684,7 +691,7 @@ void Playables::SlidingTick(float delta, int iteration)
 			Vector3 floorprojection = VELMAG() * (1 - abs(VEL().normalized().dot(get_floor_normal()))) * get_floor_normal().slide(UPWARDS).slide(get_floor_normal()).normalized();
 			currFriction = 0;
 			//UtilityFunctions::print(VEL().normalized().dot(get_floor_normal()));
-			set_velocity((VEL() + (VEL().dot(floorprojection) > 0 ? floorprojection : Vector3(0, 0, 0))).slide(get_floor_normal()));
+			set_velocity((VEL() + (VEL().dot(floorprojection) > 0 ? floorprojection * (Gravity / 4) : Vector3(0, 0, 0))).slide(get_floor_normal()));
 		}
 
 		PrevFloor = is_on_floor();
@@ -1040,7 +1047,6 @@ bool Playables::ShouldCatchAir(Vector3 oldNorm, Vector3 newNorm)
 	//UtilityFunctions::print(get_floor_angle()/TORAD);
 		move_and_slide();
 	}
-	//UtilityFunctions::print(WillCatchAir);
 	return WillCatchAir;
 }
 
