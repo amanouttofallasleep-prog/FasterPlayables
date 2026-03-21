@@ -717,7 +717,7 @@
 
 			void BufferStanding();
 
-			Dictionary Playables::ReplayToDict();
+			Dictionary ReplayToDict();
 		};
 	}
 
