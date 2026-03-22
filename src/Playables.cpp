@@ -357,12 +357,12 @@ void Playables::_input(const Ref<InputEvent>& event)
 	if (mouse_event.is_valid() && IsInputActive)
 	{
 		Vector2 lookInput = mouse_event->get_screen_relative();
-		rotate_y(-lookInput.x / 1000);
+		rotate_y((-lookInput.x / 1000) * MouseSens);
 		if (Cam != nullptr)
 		{
 			Vector3 current_rotation = Cam->get_rotation();
 			float new_x = std::clamp(
-				(current_rotation.x - lookInput.y / 1000) * MouseSens,
+				(current_rotation.x - ((lookInput.y * MouseSens) / 1000)),
 				(float)Math::deg_to_rad(-90.0),
 				(float)Math::deg_to_rad(90.0)
 			);
