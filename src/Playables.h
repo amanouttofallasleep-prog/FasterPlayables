@@ -171,6 +171,8 @@
 
 			BIND_GETSET(float, DefaultSlopeAngle, 45);
 			BIND_GETSET(float, AbsoluteMaxAllowedSlopeAngle, 85);
+			BIND_GETSET(float, MouseSens, 1);
+			BIND_GETSET(float, SlideLandMultiplier, 2);
 
 			BIND_GETSET(float, VerticalWallJumpMultiplier, .75); 
 			BIND_GETSET(float, LateralWallJumpMultiplier, .75); 

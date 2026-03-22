@@ -46,6 +46,8 @@ void Playables::_bind_methods()
 	//BIND_PROP(Playables, Variant::ARRAY, Replay);
 	BIND_PROP(Playables, Variant::FLOAT, VerticalWallJumpMultiplier);
 	BIND_PROP(Playables, Variant::FLOAT, LateralWallJumpMultiplier);
+	BIND_PROP(Playables, Variant::FLOAT, MouseSens);
+	BIND_PROP(Playables, Variant::FLOAT, SlideLandMultiplier);
 
 	BIND_VIRTUAL_2(Playables, ScreenShake, FLOAT, intensity, FLOAT, time);
 
@@ -360,7 +362,7 @@ void Playables::_input(const Ref<InputEvent>& event)
 		{
 			Vector3 current_rotation = Cam->get_rotation();
 			float new_x = std::clamp(
-				current_rotation.x - lookInput.y / 1000,
+				(current_rotation.x - lookInput.y / 1000) * MouseSens,
 				(float)Math::deg_to_rad(-90.0),
 				(float)Math::deg_to_rad(90.0)
 			);
@@ -691,7 +693,7 @@ void Playables::SlidingTick(float delta, int iteration)
 			Vector3 floorprojection = VELMAG() * (1 - abs(VEL().normalized().dot(get_floor_normal()))) * get_floor_normal().slide(UPWARDS).slide(get_floor_normal()).normalized();
 			currFriction = 0;
 			//UtilityFunctions::print(VEL().normalized().dot(get_floor_normal()));
-			set_velocity((VEL() + (VEL().dot(floorprojection) > 0 ? floorprojection * (Gravity / 4) : Vector3(0, 0, 0))).slide(get_floor_normal()));
+			set_velocity((VEL() + (VEL().dot(floorprojection) > 0 ? floorprojection * SlideLandMultiplier : Vector3(0, 0, 0))).slide(get_floor_normal()));
 		}
 
 		PrevFloor = is_on_floor();
