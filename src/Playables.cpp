@@ -1082,6 +1082,8 @@ Dictionary Playables::ReplayToDict()
 	}
 
 	MetaReplay["frames"] = SavedReplay;
+
+	Replay.clear(); 
 	return MetaReplay;
 }
 
