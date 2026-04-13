@@ -141,7 +141,7 @@
 			float MaxDashTime = 0.3;
 
 			//The height at which you can wallrun note: tf? 7 meters? 
-			float LowerAllowedWall = 7; 
+			float LowerAllowedWall = 7;
 
 			//how long landing shakes the player by default
 			float LandShakeTime = .08; 
@@ -175,9 +175,11 @@
 			BIND_GETSET(float, SlideLandMultiplier, 2);
 
 			BIND_GETSET(float, VerticalWallJumpMultiplier, .75); 
-			BIND_GETSET(float, LateralWallJumpMultiplier, .75); 
+			BIND_GETSET(float, LateralWallJumpMultiplier, .75);
+			BIND_GETSET(float, WallRunFactor, 1.3);
+			BIND_GETSET(float, BounceCameraShakeFactor, .2);
 
-			float CrouchBlendDuration = .05;
+			//float CrouchBlendDuration = .05;
 
 	#pragma endregion
 
@@ -213,7 +215,7 @@
 			float maxFOVIncrease = 15;
 
 	#pragma endregion
-
+			
 			InputMap* inMap= nullptr; 
 			Input* in= nullptr;
 			NodePath CamPath;
@@ -296,7 +298,7 @@
 
 			float defaultHeight = 0; 
 
-			float CrouchBlendTime = 0;
+			//float CrouchBlendTime = 0;
 
 			bool canStand = true; 
 
@@ -704,8 +706,8 @@
 
 			bool ShouldCatchAir(Vector3 oldNorm, Vector3 newNorm); 
 
-			float Size2D(Vector3 val) { return sqrt(val.x * val.x + val.z * val.z);  }
-			Vector3 GetSafeNormal2D(const Vector3& vec) const 
+			float Size2D(Vector3 val) { return sqrt(val.x * val.x + val.z * val.z); }
+			Vector3 GetSafeNormal2D(const Vector3& vec) const
 			{
 				Vector3 horizontal = Vector3(vec.x, 0, vec.z);
 				float len = horizontal.length();
@@ -720,6 +722,7 @@
 			void BufferStanding();
 
 			Dictionary ReplayToDict();
+
 		};
 	}
 

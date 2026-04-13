@@ -33,7 +33,12 @@ void Playables::_bind_methods()
 	BIND_FUNC(Playables, OnMovementModeChanged);
 	BIND_FUNC(Playables, UpdateCharacterStateBeforeMovement);
 	BIND_FUNC(Playables, UpdateCharacterStateAfterMovement);
-	BIND_SIG(Playables, OBJECT, OnGroundDash);
+	//BIND_SIG(Playables, OBJECT, OnCrouchAnim);
+	//BIND_SIG(Playables, OBJECT, OnUnCrouchAnim);
+
+	ADD_SIGNAL(MethodInfo("OnUnCrouchAnim"));
+	ADD_SIGNAL(MethodInfo("OnCrouchAnim"));
+
 	BIND_PROP(Playables, Variant::FLOAT, MaxDashClamp);
 	BIND_PROP(Playables, Variant::NODE_PATH, GroundCheckRayPath);
 	BIND_PROP(Playables, Variant::NODE_PATH, CheckerAreaPath);
@@ -48,6 +53,8 @@ void Playables::_bind_methods()
 	BIND_PROP(Playables, Variant::FLOAT, LateralWallJumpMultiplier);
 	BIND_PROP(Playables, Variant::FLOAT, MouseSens);
 	BIND_PROP(Playables, Variant::FLOAT, SlideLandMultiplier);
+	BIND_PROP(Playables, Variant::FLOAT, WallRunFactor);
+	BIND_PROP(Playables, Variant::FLOAT, BounceCameraShakeFactor);
 
 	BIND_VIRTUAL_2(Playables, ScreenShake, FLOAT, intensity, FLOAT, time);
 
@@ -683,6 +690,8 @@ void Playables::SlidingTick(float delta, int iteration)
 		if (get_last_slide_collision().is_valid() && vel.dot(get_last_slide_collision()->get_normal()) < -0.5 && UPWARDS.dot(get_last_slide_collision()->get_normal()) < 0.7)
 		{
 			set_velocity(GetMirroredVector(vel, get_last_slide_collision()->get_normal()));
+			ScreenShakeBRIDGE(Size2D(VEL()) * BounceCameraShakeFactor + LandShakeIntensity, LandShakeTime + Size2D(VEL()) * 0.001);
+
 			CanCoyoteTimeJump = true;
 			//UtilityFunctions::print("called"); 
 		}
@@ -693,7 +702,7 @@ void Playables::SlidingTick(float delta, int iteration)
 			Vector3 floorprojection = VELMAG() * (1 - abs(VEL().normalized().dot(get_floor_normal()))) * get_floor_normal().slide(UPWARDS).slide(get_floor_normal()).normalized();
 			currFriction = 0;
 			//UtilityFunctions::print(VEL().normalized().dot(get_floor_normal()));
-			set_velocity((VEL() + (VEL().dot(floorprojection) > 0 ? floorprojection * SlideLandMultiplier : Vector3(0, 0, 0))).slide(get_floor_normal()));
+			set_velocity((VEL() + /*(VEL().dot(floorprojection) > 0 ?*/ floorprojection * SlideLandMultiplier /*: Vector3(0, 0, 0))).slide(get_floor_normal()*/));
 		}
 
 		PrevFloor = is_on_floor();
@@ -719,7 +728,7 @@ void Playables::WallRunTick(float delta, int iteration)
 		if (!InputDirection.is_zero_approx())
 		{
 			Vector3 tempVel = vel + RelativeInputDirection.slide(get_wall_normal()).slide(UPWARDS) * Acceleration * timeTick;
-			if (!(vel.length() > MaxRunSpeed * 2 && tempVel.length() > vel.length())) vel = tempVel;
+			if (!(Size2D(vel) > MaxRunSpeed * WallRunFactor && Size2D(tempVel) > Size2D(vel))) vel = tempVel;
 		}
 		vel = vel.slide(get_wall_normal()) + DOWNWARDS * WallGravity * timeTick;
 		vel = IsCrouching() ? vel * (1 - timeTick * 3) : vel;
@@ -885,7 +894,11 @@ void Playables::init()
 		in = Input::get_singleton();
 
 	// Use .is_empty() to check if the path was actually set in the Godot Inspector
-	if (!CamPath.is_empty()) Cam = get_node<Camera3D>(CamPath);
+	if (!CamPath.is_empty()) 
+	{
+		Cam = get_node<Camera3D>(CamPath);
+
+	}
 	if (!CapPath.is_empty())
 	{
 		CapBody = get_node<CollisionShape3D>(CapPath);
@@ -894,6 +907,7 @@ void Playables::init()
 			defaultHeight = CapsuleBody->get_height();
 		}
 	}
+
 
 	if (!CheckerAreaPath.is_empty())
 	{
@@ -1041,7 +1055,7 @@ bool Playables::ShouldCatchAir(Vector3 oldNorm, Vector3 newNorm)
 	float YVEL = std::max((float)(sin(get_floor_angle()) * VELMAG()), oldYVel);
 	Vector3 vel = (oldNorm.dot(UPWARDS)) < (newNorm.dot(UPWARDS)) ? VEL().slide(oldNorm) : VEL() * cos(get_floor_angle() / 2) * Vector3(1, 0, 1) + UPWARDS * YVEL; //VEL() * cos(get_floor_angle() / 2) * Vector3(1, 0, 1) + UPWARDS * YVEL;
 	
-	if (WillCatchAir)
+	if (WillCatchAir || get_floor_angle() > 80.0)
 	{
 		SetMovementMode(Falling);
 		set_velocity(vel); //Velocity.Z = willCatchAir ? oldZVel : 0;
@@ -1087,9 +1101,9 @@ Dictionary Playables::ReplayToDict()
 	return MetaReplay;
 }
 
+
 void Playables::CamUpdate(float delta)
 {
-	float Offset = Math::lerp(0.f, (float)Cam->get_position().y, std::clamp(CrouchBlendTime / CrouchBlendDuration, 0.f, 1.f));
 	//UtilityFunctions::print(CrouchBlendTime);
 	if (MovementMode == WallRunning)
 	{
@@ -1104,7 +1118,7 @@ void Playables::CamUpdate(float delta)
 		else RollTarget = 0;
 	}
 
-	CrouchBlendTime = std::clamp(CrouchBlendTime + (IsCrouching() ? delta : -delta), 0.f, CrouchBlendDuration);	//
+	//CrouchBlendTime = std::clamp(CrouchBlendTime + (IsCrouching() ? delta : -delta), 0.f, CrouchBlendDuration);	//
 
 	if (isShaking && Cam && noise)
 	{
@@ -1112,8 +1126,8 @@ void Playables::CamUpdate(float delta)
 
 		Cam->set_h_offset(noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity);
 		Cam->set_v_offset(noise->get_noise_2d(0, ShakeTime) * ShakeIntensity);
-		Cam->set_position(/*Vector3(noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity
-			, noise->get_noise_2d(0, ShakeTime) * ShakeIntensity, 0) +*/ UPWARDS * Offset);
+		//Cam->set_position(/*Vector3(noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity
+		//	, noise->get_noise_2d(0, ShakeTime) * ShakeIntensity, 0) +*/ UPWARDS * Offset);
 			//UtilityFunctions::print("h: ", noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity, " v: ", noise->get_noise_2d(0, ShakeTime) * ShakeIntensity); 
 		ShakeIntensity = ShakeIntensity > 0 ? ShakeIntensity - delta * ShakeDecay : 0;
 	}
@@ -1122,8 +1136,8 @@ void Playables::CamUpdate(float delta)
 		Cam->set_h_offset(Math::lerp((float)Cam->get_h_offset(), 0.f, OffsetLerpBackFactor * delta));
 		Cam->set_v_offset(Math::lerp((float)Cam->get_v_offset(), 0.f, OffsetLerpBackFactor * delta));
 
-		Cam->set_position(/*Vector3(Math::lerp((double)Cam->get_h_offset(), 0, OffsetLerpBackFactor * delta)
-			, Math::lerp((double)Cam->get_v_offset(), 0, OffsetLerpBackFactor * delta), 0) +*/ UPWARDS * Offset);
+		//Cam->set_position(/*Vector3(Math::lerp((double)Cam->get_h_offset(), 0, OffsetLerpBackFactor * delta)
+		//	, Math::lerp((double)Cam->get_v_offset(), 0, OffsetLerpBackFactor * delta), 0) +*/ UPWARDS);
 	}
 
 	CurrentRoll = Math::lerp(CurrentRoll, RollTarget, delta * TiltTimeFactor);
@@ -1145,18 +1159,24 @@ void Playables::UpdateCapsuleSize()
 		if (IsCrouching() && (CapsuleBody->get_height() != CrouchHeight))
 		{
 			//UtilityFunctions::print("UpdateHeight");
+			//Cam->set_position(UPWARDS * ((defaultHeight - CrouchHeight))/2);
+
 			CapsuleBody->set_height(CrouchHeight);
-			Cam->set_position(UPWARDS * ((defaultHeight - CrouchHeight) / 2));
-			set_global_position(get_global_position() + DOWNWARDS * (defaultHeight - CrouchHeight) / 2);
-			//UtilityFunctions::print((defaultHeight - CrouchHeight) / 2);
+			//Cam->set_position(UPWARDS * ((defaultHeight - CrouchHeight)));
+			emit_signal("OnCrouchAnim");
+			if(is_on_floor()) set_global_position(get_global_position() + DOWNWARDS * (defaultHeight - CrouchHeight)/2);
+			//UtilityFunctions::print(Cam->get_position().y);
 			return;
 		}
 
 		if (CanStand /*&& IsCrouching() != WasCrouching()*/)
 		{
+			//Cam->set_position(DOWNWARDS * ((defaultHeight - CrouchHeight))/2);
+			emit_signal("OnUnCrouchAnim");
+			//UtilityFunctions::print(Cam->get_position().y);
+
 			CapsuleBody->set_height(defaultHeight);
-			Cam->set_position(DOWNWARDS * ((defaultHeight - CrouchHeight) / 2));
-			set_global_position(get_global_position() + UPWARDS * (CrouchHeight) / 2);
+			//Cam->set_position(DOWNWARDS * ((defaultHeight - CrouchHeight)));
 			return;
 		}
 
@@ -1445,6 +1465,8 @@ void Playables::OnDashFailed()
 	InputBuffer->start();
 	//GetWorld()->GetTimerManager().SetTimer(Safe_JumpInputBuffer, [this]() {BufferingDash = false; }, BufferTime, false);
 }
+
+
 #pragma endregion
 
 //void Playables::AbleToClamber()
