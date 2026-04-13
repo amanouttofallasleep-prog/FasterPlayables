@@ -1077,6 +1077,7 @@ void Playables::BufferStanding()
 		CapsuleBody->set_height(defaultHeight);
 		Cam->set_position(DOWNWARDS * ((defaultHeight - CrouchHeight) / 2));
 		set_global_position(get_global_position() + UPWARDS * (CrouchHeight) / 2);
+		emit_signal("OnUnCrouchAnim");
 	}
 
 	canStand = CanStand;
