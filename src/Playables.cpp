@@ -48,6 +48,8 @@ void Playables::_bind_methods()
 	BIND_PROP(Playables, Variant::BOOL, IsInputActive);
 	BIND_PROP(Playables, Variant::BOOL, IsChargeChallenged);
 	BIND_PROP(Playables, Variant::BOOL, IsRecording);
+	BIND_PROP(Playables, Variant::BOOL, CanWallRun);
+	BIND_PROP(Playables, Variant::BOOL, CanSlide);
 	//BIND_PROP(Playables, Variant::ARRAY, Replay);
 	BIND_PROP(Playables, Variant::FLOAT, VerticalWallJumpMultiplier);
 	BIND_PROP(Playables, Variant::FLOAT, LateralWallJumpMultiplier);
@@ -837,7 +839,7 @@ void Playables::UpdateCharacterStateBeforeMovement(float deltaSeconds)
 		SetMovementMode(EMovementMode::Walking);
 	}
 	GroundCheckRay->force_raycast_update();
-	if (MovementMode != EMovementMode::WallRunning && ((is_on_wall()) && !GroundCheckRay->is_colliding()
+	if (CanWallRun && MovementMode != EMovementMode::WallRunning && ((is_on_wall()) && !GroundCheckRay->is_colliding()
 		&& (!LastWallNormal.is_equal_approx(get_wall_normal()) || (LastYTouchedWall - LowerAllowedWall) > get_global_position().y)) && !(IsCrouching() && VELMAG() > minSlideVel))
 	{
 		SetMovementMode(EMovementMode::WallRunning);
@@ -849,7 +851,7 @@ void Playables::UpdateCharacterStateBeforeMovement(float deltaSeconds)
 		SetMovementMode(EMovementMode::Falling);
 	}
 
-	if (MovementMode != EMovementMode::Sliding && MovementMode != WallRunning && IsCrouching() && VELMAG() > minSlideVel)
+	if (CanSlide && MovementMode != EMovementMode::Sliding && MovementMode != WallRunning && IsCrouching() && VELMAG() > minSlideVel)
 	{
 		//UtilityFunctions::print("Sliding");
 		SetMovementMode(EMovementMode::Sliding);

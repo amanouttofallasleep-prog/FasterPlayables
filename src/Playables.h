@@ -178,6 +178,8 @@
 			BIND_GETSET(float, LateralWallJumpMultiplier, .75);
 			BIND_GETSET(float, WallRunFactor, 1.3);
 			BIND_GETSET(float, BounceCameraShakeFactor, .2);
+			BIND_GETSET(bool, CanWallRun, true);
+			BIND_GETSET(bool, CanSlide, true);
 
 			//float CrouchBlendDuration = .05;
 
