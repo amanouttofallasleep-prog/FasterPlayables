@@ -114,6 +114,8 @@ void Playables::_bind_methods()
 	ClassDB::bind_method(D_METHOD("SetGravity", "newVal"), &Playables::SetGravity);
 	ClassDB::bind_method(D_METHOD("GetGravity"), &Playables::GetGravity);
 
+	ClassDB::bind_method(D_METHOD("GetMovementModeInt"), &Playables::GetMovementModeInt);
+
 	//ClassDB::bind_method(D_METHOD("SetCoyoteTimeActive", "newVal"), &Playables::SetCoyoteTimeActive);
 	//ClassDB::bind_method(D_METHOD("GetCoyoteTimeActive"), &Playables::GetCoyoteTimeActive);
 
@@ -1468,7 +1470,6 @@ void Playables::OnDashFailed()
 	InputBuffer->start();
 	//GetWorld()->GetTimerManager().SetTimer(Safe_JumpInputBuffer, [this]() {BufferingDash = false; }, BufferTime, false);
 }
-
 
 #pragma endregion
 

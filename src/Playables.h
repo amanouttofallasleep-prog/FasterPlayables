@@ -273,7 +273,8 @@
 				MovementMode = newMode;
 				OnMovementModeChanged(previousMode);
 			}
-
+			int GetMovementModeInt() { return MovementMode; }
+			EMovementMode GetMovementMode() { return MovementMode; }
 			//input direction THIS IS NOT RELATIVE TO PLAYER 
 			//updated in getInputDirection() which is assumed first in gd script _process()
 			Vector2 InputDirection;
