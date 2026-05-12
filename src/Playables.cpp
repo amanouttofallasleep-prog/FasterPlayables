@@ -57,6 +57,7 @@ void Playables::_bind_methods()
 	BIND_PROP(Playables, Variant::FLOAT, SlideLandMultiplier);
 	BIND_PROP(Playables, Variant::FLOAT, WallRunFactor);
 	BIND_PROP(Playables, Variant::FLOAT, BounceCameraShakeFactor);
+	BIND_PROP(Playables, Variant::FLOAT, ShakeClamp);
 
 	BIND_VIRTUAL_2(Playables, ScreenShake, FLOAT, intensity, FLOAT, time);
 
@@ -1106,6 +1107,82 @@ Dictionary Playables::ReplayToDict()
 	return MetaReplay;
 }
 
+Vector3 Playables::ApproxProjectile(Vector3 Accel, Vector3 Vel, Vector3 Pos, int iterCount, float MaxTime, float BulletSpeed)
+{
+	Vel = GetProjectedVelocity() - Vel;
+	Pos = get_global_position() - Pos; 
+	Accel = GetGravityAccel() - Accel; 
+
+	//using regula falsi algorithm
+	float time1 = 0; 
+	float time2 = MaxTime;
+	float Falsi; //the supposed distance to the hit
+	float FalsiApprox; //supposed time where the thing hits
+	for (int i = 0; i < iterCount; i++) 
+	{
+		// checking how close the bullet is at the time provided at the min and max
+		float check1 = ((Pos + (Vel * time1) + (0.5 * pow(time1, 2) * Accel))).length() - (BulletSpeed * time1);
+		float check2 = ((Pos + (Vel * time2) + (0.5 * pow(time2, 2) * Accel))).length() - (BulletSpeed * time2);
+
+		FalsiApprox = time1 - ((check1 * (time2 - time1)) / (check2 * check1));
+		Falsi = ((Pos + (Vel * Falsi) + (0.5 * pow(Falsi, 2) * Accel))).length() - (BulletSpeed * FalsiApprox);
+
+		if (Falsi * check1 < 0) time2 = FalsiApprox;
+		else time1 = FalsiApprox;
+	}
+	return Pos + (Vel * FalsiApprox) + (0.5 * pow(FalsiApprox, 2) * Accel);
+}
+
+Vector3 Playables::GetGravityAccel()
+{
+	Vector3 res = Vector3();
+	Vector3 dir = GetSlideDirection();
+	switch (MovementMode)
+	{
+	case Walking:
+		break;
+	case Sliding:
+		res = !is_on_floor() ? DOWNWARDS * SlideGravity : SlideFloorGravityInfluence * dir.normalized().slide(UPWARDS) * dir.length();
+		break;
+	case WallRunning:
+		res = DOWNWARDS * WallGravity;
+		break;
+	case Falling:
+		res = Gravity * DOWNWARDS;
+		break;
+	case None://shouldn't be here at all
+		break;
+	default://shouldn't be here at all
+		break;
+	}
+	return res;
+}
+
+Vector3 Playables::GetProjectedVelocity()
+{
+	Vector3 res = Vector3(); 
+	switch (MovementMode)
+	{
+	case Walking: //projecting velocity onto a the ground plane
+		res = (VEL().slide(get_floor_normal()).normalized()) * VELMAG();
+		break;
+	case Sliding: 
+		res = VEL();
+		break;
+	case WallRunning:
+		res = VEL().slide(get_floor_normal().normalized());
+		break;
+	case Falling:
+		res = VEL();
+		break;
+	case None://shouldn't be here at all
+		break;
+	default://shouldn't be here at all
+		break;
+	}
+	return res;
+}
+
 
 void Playables::CamUpdate(float delta)
 {
@@ -1129,8 +1206,8 @@ void Playables::CamUpdate(float delta)
 	{
 		ShakeTime += delta * ShakeSpeed;
 
-		Cam->set_h_offset(noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity);
-		Cam->set_v_offset(noise->get_noise_2d(0, ShakeTime) * ShakeIntensity);
+		Cam->set_h_offset(MIN(noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity, CapsuleBody->get_radius() * ShakeClamp));
+		Cam->set_v_offset(MIN(noise->get_noise_2d(0, ShakeTime) * ShakeIntensity, CapsuleBody->get_radius() * ShakeClamp));
 		//Cam->set_position(/*Vector3(noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity
 		//	, noise->get_noise_2d(0, ShakeTime) * ShakeIntensity, 0) +*/ UPWARDS * Offset);
 			//UtilityFunctions::print("h: ", noise->get_noise_2d(ShakeTime, 0) * ShakeIntensity, " v: ", noise->get_noise_2d(0, ShakeTime) * ShakeIntensity); 

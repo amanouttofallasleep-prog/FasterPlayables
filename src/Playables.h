@@ -180,6 +180,7 @@
 			BIND_GETSET(float, BounceCameraShakeFactor, .2);
 			BIND_GETSET(bool, CanWallRun, true);
 			BIND_GETSET(bool, CanSlide, true);
+			BIND_GETSET(float, ShakeClamp, 3);// * radius of capsule
 
 			//float CrouchBlendDuration = .05;
 
@@ -725,7 +726,9 @@
 			void BufferStanding();
 
 			Dictionary ReplayToDict();
-
+			Vector3 ApproxProjectile(Vector3 Accel, Vector3 Vel, Vector3 Pos, int iterCount, float MaxTime, float BulletSpeed);
+			Vector3 GetGravityAccel(); 
+			Vector3 GetProjectedVelocity(); 
 		};
 	}
 
