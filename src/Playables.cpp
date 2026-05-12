@@ -237,6 +237,8 @@ void Playables::_bind_methods()
 	ClassDB::bind_method(D_METHOD("MaxDashTimerCall"), &Playables::MaxDashTimerCall);
 	ClassDB::bind_method(D_METHOD("ActiveShakeTimerCall"), &Playables::ActiveShakeTimerCall);
 
+	ClassDB::bind_method(D_METHOD("ApproxProjectile", "Accel", "Vel", "Pos", "iterCount", "MaxTime", "BulletSpeed"), &Playables::ApproxProjectile);
+
 
 	ADD_GROUP("MovementConstants", "movement_");
 
