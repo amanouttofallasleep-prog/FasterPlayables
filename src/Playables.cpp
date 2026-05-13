@@ -38,6 +38,7 @@ void Playables::_bind_methods()
 
 	ADD_SIGNAL(MethodInfo("OnUnCrouchAnim"));
 	ADD_SIGNAL(MethodInfo("OnCrouchAnim"));
+	ADD_SIGNAL(MethodInfo("OnShotRequested", PropertyInfo(Variant::FLOAT, "ApproxTime")));
 
 	BIND_PROP(Playables, Variant::FLOAT, MaxDashClamp);
 	BIND_PROP(Playables, Variant::NODE_PATH, GroundCheckRayPath);
@@ -1111,9 +1112,9 @@ Dictionary Playables::ReplayToDict()
 
 Vector3 Playables::ApproxProjectile(Vector3 Accel, Vector3 Vel, Vector3 Pos, int iterCount, float MaxTime, float BulletSpeed)
 {
-	Vel = GetProjectedVelocity() - Vel;
-	Pos = get_global_position() - Pos; 
-	Accel = GetGravityAccel() - Accel; 
+	Vector3 RelVel = GetProjectedVelocity() - Vel; // velocity relative to the player from the point of view of the shooter
+	Vector3 RelPos = get_global_position() - Pos; // Position of the turret relative to the player
+	Vector3 RelAccel = GetGravityAccel() - Accel; // acceleration of the shooter relative to the player
 
 	//using regula falsi algorithm
 	float time1 = 0; 
@@ -1123,16 +1124,20 @@ Vector3 Playables::ApproxProjectile(Vector3 Accel, Vector3 Vel, Vector3 Pos, int
 	for (int i = 0; i < iterCount; i++) 
 	{
 		// checking how close the bullet is at the time provided at the min and max
-		float check1 = ((Pos + (Vel * time1) + (0.5 * pow(time1, 2) * Accel))).length() - (BulletSpeed * time1);
-		float check2 = ((Pos + (Vel * time2) + (0.5 * pow(time2, 2) * Accel))).length() - (BulletSpeed * time2);
+		float check1 = ((RelPos + (RelVel * time1) + (0.5 * pow(time1, 2) * RelAccel))).length() - (BulletSpeed * time1);
+		float check2 = ((RelPos + (RelVel * time2) + (0.5 * pow(time2, 2) * RelAccel))).length() - (BulletSpeed * time2);
 
-		FalsiApprox = time1 - ((check1 * (time2 - time1)) / (check2 * check1));
-		Falsi = ((Pos + (Vel * Falsi) + (0.5 * pow(Falsi, 2) * Accel))).length() - (BulletSpeed * FalsiApprox);
+		FalsiApprox = time1 - ((check1 * (time2 - time1)) / (check2 - check1));
+		Falsi = ((RelPos + (RelVel * FalsiApprox) + (0.5 * pow(FalsiApprox, 2) * RelAccel))).length() - (BulletSpeed * FalsiApprox);
 
 		if (Falsi * check1 < 0) time2 = FalsiApprox;
-		else time1 = FalsiApprox;
+		else time1 = FalsiApprox;	
 	}
-	return Pos + (Vel * FalsiApprox) + (0.5 * pow(FalsiApprox, 2) * Accel);
+	//the calculated relative position the player will be at to be shot
+	// FalsiApprox - represents the time it takes for the player to be there
+	Vector3 ApproxPos = RelPos + (RelVel * FalsiApprox) + (0.5 * pow(FalsiApprox, 2) * RelAccel);
+	emit_signal("OnShotRequested", FalsiApprox);
+	return ApproxPos.normalized();
 }
 
 Vector3 Playables::GetGravityAccel()
@@ -1184,7 +1189,6 @@ Vector3 Playables::GetProjectedVelocity()
 	}
 	return res;
 }
-
 
 void Playables::CamUpdate(float delta)
 {
