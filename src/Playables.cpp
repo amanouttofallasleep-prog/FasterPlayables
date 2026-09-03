@@ -11,6 +11,13 @@
 #include <godot_cpp/classes/wrapped.hpp>
 //#include "../build/BindMacros.h"
 
+//@todo 
+/*
+	Fix the downward teleport issue - fixed 
+	Fix the slide issue where it completely inverts speed 
+	Fix the forever short issue as well - lowkey have no clue
+*/
+
 using namespace godot;
 
 void Playables::_bind_methods()
@@ -39,6 +46,9 @@ void Playables::_bind_methods()
 	ADD_SIGNAL(MethodInfo("OnUnCrouchAnim"));
 	ADD_SIGNAL(MethodInfo("OnCrouchAnim"));
 	ADD_SIGNAL(MethodInfo("OnShotRequested", PropertyInfo(Variant::FLOAT, "ApproxTime")));
+	ADD_SIGNAL(MethodInfo("OnJumpComplete"));
+	ADD_SIGNAL(MethodInfo("OnDashComplete"));
+
 
 	BIND_PROP(Playables, Variant::FLOAT, MaxDashClamp);
 	BIND_PROP(Playables, Variant::NODE_PATH, GroundCheckRayPath);
@@ -56,11 +66,13 @@ void Playables::_bind_methods()
 	BIND_PROP(Playables, Variant::FLOAT, LateralWallJumpMultiplier);
 	BIND_PROP(Playables, Variant::FLOAT, MouseSens);
 	BIND_PROP(Playables, Variant::FLOAT, SlideLandMultiplier);
+	BIND_PROP(Playables, Variant::FLOAT, SlideLandMultiplierOppo);
 	BIND_PROP(Playables, Variant::FLOAT, WallRunFactor);
 	BIND_PROP(Playables, Variant::FLOAT, BounceCameraShakeFactor);
 	BIND_PROP(Playables, Variant::FLOAT, ShakeClamp);
 
 	BIND_VIRTUAL_2(Playables, ScreenShake, FLOAT, intensity, FLOAT, time);
+
 
 	BIND_SIG(val, BOOL, CustomFlagValSwitched1)
 		ClassDB::bind_method(D_METHOD("SetCustomFlag1", "newVal"), &Playables::SetCustomFlag1);
@@ -710,7 +722,9 @@ void Playables::SlidingTick(float delta, int iteration)
 			Vector3 floorprojection = VELMAG() * (1 - abs(VEL().normalized().dot(get_floor_normal()))) * get_floor_normal().slide(UPWARDS).slide(get_floor_normal()).normalized();
 			currFriction = 0;
 			//UtilityFunctions::print(VEL().normalized().dot(get_floor_normal()));
-			set_velocity((VEL() + /*(VEL().dot(floorprojection) > 0 ?*/ floorprojection * SlideLandMultiplier /*: Vector3(0, 0, 0))).slide(get_floor_normal()*/));
+			set_velocity((VEL() + floorprojection 
+				* (VEL().normalized().dot(floorprojection.normalized()) <= 0 /*we add the two vectors if they don't go same direction decrease multiplier*/ 
+					? SlideLandMultiplierOppo : SlideLandMultiplier)));
 		}
 
 		PrevFloor = is_on_floor();
@@ -1249,22 +1263,27 @@ void Playables::UpdateCapsuleSize()
 			//UtilityFunctions::print("UpdateHeight");
 			//Cam->set_position(UPWARDS * ((defaultHeight - CrouchHeight))/2);
 
+			if (MovementMode == EMovementMode::Walking)
+			set_global_position(get_global_position() + DOWNWARDS * (defaultHeight - CrouchHeight) / 2);
+			
 			CapsuleBody->set_height(CrouchHeight);
 			//Cam->set_position(UPWARDS * ((defaultHeight - CrouchHeight)));
 			emit_signal("OnCrouchAnim");
-			if(is_on_floor()) set_global_position(get_global_position() + DOWNWARDS * (defaultHeight - CrouchHeight)/2);
 			//UtilityFunctions::print(Cam->get_position().y);
 			return;
 		}
 
 		if (CanStand /*&& IsCrouching() != WasCrouching()*/)
 		{
-			//Cam->set_position(DOWNWARDS * ((defaultHeight - CrouchHeight))/2);
+			if (MovementMode == EMovementMode::Walking)
+			{
+				Vector3 tempHolder = VEL();
+				set_velocity(get_floor_normal() * defaultHeight * 20);
+				move_and_slide();
+				set_velocity(tempHolder);
+			}
 			emit_signal("OnUnCrouchAnim");
-			//UtilityFunctions::print(Cam->get_position().y);
-
-			CapsuleBody->set_height(defaultHeight);
-			//Cam->set_position(DOWNWARDS * ((defaultHeight - CrouchHeight)));
+			CapsuleBody->set_height(defaultHeight); //Disables Collision then changes the height of the characcter
 			return;
 		}
 
@@ -1473,6 +1492,8 @@ void Playables::OnWallJump()
 
 void Playables::OnJumpDone()
 {
+	emit_signal("OnJumpComplete");
+
 	if (MovementMode == EMovementMode::WallRunning || !(MovementMode == EMovementMode::WallRunning))
 		//((IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun) && CanWallJump) || (!IsCustomMovementMode(ECustomMovementMode::CMOVE_WallRun) && CanJump))
 	{
@@ -1512,6 +1533,8 @@ void Playables::OnJumpFailed()
 
 void Playables::OnDashDone()
 {
+	emit_signal("OnDashComplete");
+
 	//@todo wtf
 		////just checks if you actually dashed or could have dashed, stupid workaround I know
 		//if (MovementMode == EMovementMode::WallRunning || 

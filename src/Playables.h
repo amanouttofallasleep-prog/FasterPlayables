@@ -172,6 +172,7 @@
 			BIND_GETSET(float, DefaultSlopeAngle, 45);
 			BIND_GETSET(float, AbsoluteMaxAllowedSlopeAngle, 85);
 			BIND_GETSET(float, MouseSens, 1);
+			BIND_GETSET(float, SlideLandMultiplierOppo, 0.6);
 			BIND_GETSET(float, SlideLandMultiplier, 2);
 
 			BIND_GETSET(float, VerticalWallJumpMultiplier, .75); 
@@ -660,14 +661,16 @@
 			BIND_BRIDGE_VOID(OnDashDone);
 			BIND_BRIDGE_VOID(OnDashFailed);
 
-			/*void OnGroundDash();
+			/*
+			void OnGroundDash();
 			void OnWallDash();
 			virtual void OnGroundJump();
 			virtual void OnWallJump();
 			virtual void OnJumpDone(Vector3 JumpPower);
 			virtual void OnJumpFailed();
 			virtual void OnDashDone(float DashPower);
-			virtual void OnDashFailed(); */
+			virtual void OnDashFailed(); 
+			*/
 			//virtual bool CheckCanClamber() { return VELMAG() <= MaxRunSpeed && (!IsJumping() && WasJumping()); }
 			//void AbleToClamber();
 
