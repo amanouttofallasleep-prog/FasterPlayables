@@ -1275,13 +1275,8 @@ void Playables::UpdateCapsuleSize()
 
 		if (CanStand /*&& IsCrouching() != WasCrouching()*/)
 		{
-			if (MovementMode == EMovementMode::Walking)
-			{
-				Vector3 tempHolder = VEL();
-				set_velocity(get_floor_normal() * defaultHeight * 20);
-				move_and_slide();
-				set_velocity(tempHolder);
-			}
+			if (MovementMode == EMovementMode::Walking) 
+				set_global_position(get_global_position() + UPWARDS * (defaultHeight - CrouchHeight) / 2);
 			emit_signal("OnUnCrouchAnim");
 			CapsuleBody->set_height(defaultHeight); //Disables Collision then changes the height of the characcter
 			return;
