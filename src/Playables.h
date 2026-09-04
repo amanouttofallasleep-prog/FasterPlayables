@@ -1,10 +1,10 @@
 	#ifndef PLAYABLES_H
 	#define PLAYABLES_H
 
-	#define CFLAG 1
-	#define JFLAG 2
-	#define SFLAG 4
-	#define CUSTOMFLAG1 8
+	#define CFLAG 1				//Crouch Flag
+	#define JFLAG 2				//Jump Flag
+	#define SFLAG 4				//Sprint Flagg
+	#define CUSTOMFLAG1 8		//The next flags are just whatever inputs i wanna add later
 	#define CUSTOMFLAG2 16
 	#define CUSTOMFLAG3 32
 	#define CUSTOMFLAG4 64
