@@ -47,7 +47,7 @@
 	};
 	using namespace godot;
 
-	// MAGIC NUMBERS
+	// MAGIC NUMBERS straiiiiight from ue4
 	const float MAX_STEP_SIDE_Z = 0.08f;	// maximum z value for the normal on the vertical side of steps
 	const float SWIMBOBSPEED = -80.f;
 	const float VERTICAL_SLOPE_NORMAL_Z = 0.001f; // Slope is vertical if Abs(Normal.Z) <= this threshold. Accounts for precision problems that sometimes angle normals slightly off horizontal for vertical surface.
@@ -70,13 +70,13 @@
 	//Multiply this to any would be degree to transfer to radians
 	const float TORAD = (Math_PI / 180.0); 
 
-	struct ReplayFrame {
-		Vector3 Pos;           // 12 bytes
-		Vector2 Rot;        // 8 bytes
-		//uint8_t MovementMode;      // 1 byte
-		// 20 bytes
-		// or just 28 bytes taking out the MovementMode do animations later
-	};
+	//struct ReplayFrame {
+	//	Vector3 Pos;           // 12 bytes
+	//	Vector2 Rot;        // 8 bytes
+	//	//uint8_t MovementMode;      // 1 byte
+	//	// 20 bytes
+	//	// or just 28 bytes taking out the MovementMode do animations later
+	//};
 
 	//the absolute maximum allowed iterations before basically saying fuck it just leave
 	const int MAXITER = 25;
@@ -236,11 +236,17 @@
 			Area3D* CrouchChecking = nullptr;
 			NodePath CheckerAreaPath;
 
-			Timer* JumpTimer = nullptr;
+			//BIND_GETSET(float, MaxDashClamp, 100.0 / 3.6);
+			BIND_GETSET(Timer*, JumpTimer, nullptr);
+			BIND_GETSET(Timer*, DashTimer, nullptr);
+			BIND_GETSET(Timer*, InputBuffer, nullptr);
+			BIND_GETSET(Timer*, CoyoteBuffer, nullptr);
+			BIND_GETSET(Timer*, MaxDashTimer, nullptr);
+			/*Timer* JumpTimer = nullptr;
 			Timer* DashTimer = nullptr;
 			Timer* InputBuffer = nullptr;
 			Timer* CoyoteBuffer = nullptr;
-			Timer* MaxDashTimer = nullptr;
+			Timer* MaxDashTimer = nullptr;*/
 
 			static void _bind_methods();
 
@@ -289,15 +295,26 @@
 
 			Vector3 LastWallNormal;
 			float LastYTouchedWall;
+			//BIND_GETSET(Timer*, MaxDashTimer, nullptr);
 
-			int CoyoteSlideRefreshCnt = 0;
-			bool BufferingJump = false;
-			bool BufferingDash = false;
-			bool CoyoteTimeActive = false;
-			bool CanCoyoteTimeJump = false;
-			bool MaxDashActive = false;
-			bool PrevFloor = false;
-			float MaxDashStrength = 0;
+
+			BIND_GETSET(int, CoyoteSlideRefreshCnt, 0);
+			BIND_GETSET(bool, BufferingJump, false);
+			BIND_GETSET(bool, BufferingDash, false);
+			BIND_GETSET(bool, CoyoteTimeActive, false);
+			BIND_GETSET(bool, CanCoyoteTimeJump, false);
+			BIND_GETSET(bool, MaxDashActive, false);
+			BIND_GETSET(bool, PrevFloor, false);
+			BIND_GETSET(float, MaxDashStrength, false);
+
+			//int CoyoteSlideRefreshCnt = 0;
+			//bool BufferingJump = false;
+			//bool BufferingDash = false;
+			//bool CoyoteTimeActive = false;
+			//bool CanCoyoteTimeJump = false;
+			//bool MaxDashActive = false;
+			//bool PrevFloor = false;
+			//float MaxDashStrength = 0;
 
 			float currFriction = 0;
 
@@ -348,9 +365,11 @@
 				////The period of the oscilation for each axis
 				//Vector2 OscilationSpeedFactor = Vector2(5, 2);
 
-			Vector<ReplayFrame> Replay;
-			Array RecdPos; 
-			Array RectRot; 
+			//Vector<ReplayFrame> Replay;
+			//Array RecdPos; 
+			//Array RectRot; 
+			BIND_GETSET(TypedArray<Vector2>, RotationReplayArr, TypedArray<Vector2>());
+			BIND_GETSET(TypedArray<Vector3>, PositionReplayArr, TypedArray<Vector3>());
 	#pragma endregion
 
 	#pragma endregion
@@ -426,8 +445,8 @@
 			/*RayCast3D* groundCheckRay;
 			RayCast3D* wallCheckRay;*/
 
-			Vector<ReplayFrame> GetReplay() {return Replay;} 
-			void SetReplay(Vector<ReplayFrame> newVal) {Replay = newVal;}
+			/*Vector<ReplayFrame> GetReplay() {return Replay;} 
+			void SetReplay(Vector<ReplayFrame> newVal) {Replay = newVal;}*/
 
 			NodePath GetGroundCheckRayPath() { return GroundCheckRayPath; }
 			void SetGroundCheckRayPath(const NodePath& p_path) { GroundCheckRayPath = p_path; }
@@ -592,9 +611,6 @@
 			void SetGravity(float newVal) { Gravity = newVal; }
 			float GetGravity() { return Gravity; } 
 
-			void SetCoyoteTimeActive(bool newVal) { CoyoteTimeActive = newVal; }
-			bool GetCoyoteTimeActive() { return CoyoteTimeActive; }
-
 			void SetDeceleration(float newVal) { Deceleration = newVal; }
 			float GetDeceleration() { return Deceleration; }
 
@@ -643,6 +659,7 @@
 			void UpdateCapsuleSize();
 
 
+
 	#pragma endregion
 
 	#pragma region Jump/Dash Functions
@@ -683,7 +700,7 @@
 	#pragma endregion
 
 			void ChargeAction(bool isDash);
-
+			void ClearChargeAction() { ChargeFlags = 0; };
 			int GetCharge(bool isDash) { return !isDash ? ChargeFlags & 15 : ChargeFlags >> 4; }
 
 			void init(); 
@@ -728,7 +745,7 @@
 
 			void BufferStanding();
 
-			Dictionary ReplayToDict();
+			//Dictionary ReplayToDict();
 			Vector3 ApproxProjectile(Vector3 Accel, Vector3 Vel, Vector3 Pos, int iterCount, float MaxTime, float BulletSpeed);
 			Vector3 GetGravityAccel(); 
 			Vector3 GetProjectedVelocity(); 
